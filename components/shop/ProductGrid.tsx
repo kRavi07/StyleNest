@@ -5,10 +5,12 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useCart } from "@/hooks/use-cart";
 import { Heart, ShoppingBag, Eye } from "lucide-react";
 import { Product } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/lib/utils";
+import { useCart } from "@/hooks/context/cart/cart-context";
+import { useCartStore } from "@/hooks/store/cart/use-cart";
 
 type ProductGridProps = {
   products: Product[];
@@ -19,7 +21,7 @@ const ProductGrid = ({ products }: ProductGridProps) => {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {products.length > 0 ? (
         products.map((product) => (
-          <ProductCard key={product.id} product={product} />
+          <ProductCard key={product._id} product={product} />
         ))
       ) : (
         <div className="col-span-full flex flex-col items-center justify-center py-12">
@@ -36,7 +38,7 @@ const ProductGrid = ({ products }: ProductGridProps) => {
 };
 
 const ProductCard = ({ product }: { product: Product }) => {
-  const { addItem } = useCart();
+  const { addItem } = useCartStore((state) => state);
   const { toast } = useToast();
   const [isHovered, setIsHovered] = useState(false);
 
@@ -55,10 +57,12 @@ const ProductCard = ({ product }: { product: Product }) => {
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <Link href={`/products/${product.id}`} className="block h-full">
+        <Link href={`/products/${product._id}`} className="block h-full">
           <div
             className="h-full w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-            style={{ backgroundImage: `url(${product.images[0]})` }}
+            style={{
+              backgroundImage: `url(${"https://images.pexels.com/photos/1957478/pexels-photo-1957478.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"})`
+            }}
           />
 
           {/* Product badges */}
@@ -80,7 +84,7 @@ const ProductCard = ({ product }: { product: Product }) => {
               <Heart className="h-4 w-4" />
             </Button>
             <Button size="icon" variant="secondary" className="rounded-full" asChild>
-              <Link href={`/products/${product.id}`}>
+              <Link href={`/products/${product._id}`} as={"button"}>
                 <Eye className="h-4 w-4" />
               </Link>
             </Button>
@@ -100,21 +104,25 @@ const ProductCard = ({ product }: { product: Product }) => {
       </div>
 
       <CardContent className="p-4">
-        <div className="text-sm text-muted-foreground">{product.category}</div>
+        <div className="text-sm text-muted-foreground">{product.category.name}</div>
         <h3 className="font-medium mt-1 line-clamp-1">
-          <Link href={`/products/${product.id}`}>{product.name}</Link>
+          <Link href={`/products/${product._id}`}>{product.name}</Link>
         </h3>
         <div className="flex items-center justify-between mt-2">
           <div className="flex items-center gap-2">
-            {product.originalPrice ? (
+            {product.mrp ? (
               <>
-                <span className="font-medium">${product.price.toFixed(2)}</span>
+                <span className="font-medium">
+                  {formatCurrency(product.price)}
+                </span>
                 <span className="text-muted-foreground line-through text-sm">
-                  ${product.originalPrice.toFixed(2)}
+                  {formatCurrency(product.mrp)}
                 </span>
               </>
             ) : (
-              <span className="font-medium">${product.price.toFixed(2)}</span>
+              <span className="font-medium">{
+                formatCurrency(product.price)
+              }</span>
             )}
           </div>
           <div className="text-sm text-muted-foreground">
@@ -126,7 +134,7 @@ const ProductCard = ({ product }: { product: Product }) => {
       <CardFooter className="p-4 pt-0">
         <Button
           variant="outline"
-          className="w-full transition-all hover:bg-primary hover:text-primary-foreground"
+          className="w-full transition-all hover:bg-gold-accent hover:text-primary-foreground"
           onClick={handleAddToCart}
         >
           Add to Cart

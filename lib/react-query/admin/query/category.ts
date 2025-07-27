@@ -2,6 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   GetAllCategories,
   approveCategory,
+  getSubCategories,
   handleFeaturedCategory,
 } from "../api/category";
 import { toast } from "sonner";
@@ -15,8 +16,13 @@ export const useGetAllCatgeories = () => {
   });
 };
 
-export const refetchCategories = () => {
-  useGetAllCatgeories().refetch();
+export const useGetSubCategories = (id: string) => {
+  return useQuery({
+    queryKey: ["adminSubCategories", id],
+    queryFn: () => getSubCategories(id),
+    staleTime: 60 * 1000 * 5,
+    enabled: !!id,
+  });
 };
 
 export const useApproveCategory = () => {

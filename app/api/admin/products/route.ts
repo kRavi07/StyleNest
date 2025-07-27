@@ -1,17 +1,73 @@
 import { NextRequest, NextResponse } from "next/server";
 import Product from "@/lib/db/models/product";
+import Category from "@/lib/db/models/category";
 import connectToDatabase from "@/lib/db/mongoose";
 import { CreateProductSchema } from "@/lib/validation/product";
 import { parseFormData } from "@/lib/services/form-parser";
 import { isAdmin } from "@/lib/auth";
 import { processFileUpload } from "@/lib/services/file-services";
+import { handleProductUpload } from "./product.service";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     await connectToDatabase();
-    const products = await Product.find({});
-    return NextResponse.json(products);
+
+    const { searchParams } = new URL(req.url);
+
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "20");
+    const search = searchParams.get("search") || "";
+    const status = searchParams.get("status") || "all";
+    const category = searchParams.get("category") || "all";
+    const gender = searchParams.get("for");
+
+    const query: any = {};
+
+    if (search) {
+      query.name = { $regex: search, $options: "i" };
+    }
+
+    if (gender) {
+      query.gender = gender;
+    }
+
+    if (status !== "all") {
+      query.status = status;
+    }
+
+    if (category !== "all") {
+      query.category = category;
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [products, total] = await Promise.all([
+      Product.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate({
+          path: "category",
+          select: "_id name",
+        }),
+      Product.countDocuments(query),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    const hasMore = page < totalPages;
+    const nextPage = hasMore ? page + 1 : null;
+
+    return NextResponse.json({
+      data: products,
+      total,
+      totalPages,
+      currentPage: page,
+      hasMore,
+      nextPage,
+    });
   } catch (error) {
+    console.error("Product fetch error:", error);
     return NextResponse.json(
       { error: "Failed to fetch products" },
       { status: 500 }
@@ -21,6 +77,8 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    console.log("POST /api/admin/products");
+
     const authResult = await isAdmin(req);
     if (!authResult.success) {
       return NextResponse.json(
@@ -29,91 +87,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const formData = await req.formData();
-    if (!formData) {
-      return NextResponse.json(
-        { success: false, error: "Form data is missing" },
-        { status: 400 }
-      );
-    }
+    const result = await handleProductUpload(req);
 
-    const name = formData.get("name") as string;
-    const description = formData.get("description") as string;
-    const price = parseFloat(formData.get("price") as string);
-
-    const parsedFormData = parseFormData(formData, {
-      jsonKeys: ["seo", "variants", "attributes", "variantAttribute"],
-      numberKeys: ["price", "mrp", "inventory"],
-      booleanKeys: [
-        "isNewProduct",
-        "isSale",
-        "featured",
-        "isActive",
-        "isArchived",
-        "isDeleted",
-      ],
-    });
-
-    const files = formData.getAll("images");
-
-    const parsedData = CreateProductSchema.safeParse(parsedFormData);
-
-    if (!parsedData.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Validation failed",
-          issues: parsedData.error.issues.map((issue) => ({
-            message: issue.message,
-            path: issue.path,
-          })),
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    const uploadedUrls: string[] = [];
-
-    await connectToDatabase();
-
-    const imageFiles = Array.isArray(files) ? files : [files];
-    for (const file of imageFiles) {
-      if (file instanceof File) {
-        const url = await processFileUpload(file, "products");
-        uploadedUrls.push(url);
-      } else {
-        return NextResponse.json(
-          { success: false, error: "Invalid image file" },
-          { status: 400 }
-        );
-      }
-    }
-
-    const createData = {
-      ...parsedData.data,
-      images: uploadedUrls,
-    };
-
-    const res = await Product.create(createData);
-
-    return NextResponse.json(
-      {
-        success: true,
-        product: {
-          id: res._id,
-          name,
-          description,
-          price,
-        },
-        message: "Product uploaded successfully",
-      },
-      {
-        status: 201,
-      }
-    );
+    return NextResponse.json(result.payload, { status: result.status });
   } catch (error) {
+    console.error("Upload error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to upload product" },
       { status: 500 }

@@ -1,63 +1,75 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import connectToDatabase from "@/lib/db/mongoose";
-import Product from "@/lib/db/models/product";
+import Product, { IProduct } from "@/lib/db/models/product";
+import { generatePresignedUrl } from "@/lib/services/s3-services";
+import { getAllProductFilters } from "./products.service";
 // GET all products with pagination and filtering
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const url = new URL(req.url);
-    const page = parseInt(url.searchParams.get("page") || "1");
-    const limit = parseInt(url.searchParams.get("limit") || "10");
-    const category = url.searchParams.get("category");
-    const featured = url.searchParams.get("featured");
-    const inStock = url.searchParams.get("inStock");
-    const isNewProduct = url.searchParams.get("isNewProduct");
-    const isSale = url.searchParams.get("isSale");
-    const search = url.searchParams.get("search");
-    const sort = url.searchParams.get("sort") || "createdAt";
-    const order = url.searchParams.get("order") || "desc";
+    await connectToDatabase();
+
+    const { searchParams } = new URL(req.url);
+
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "20");
+    const search = searchParams.get("search") || "";
+    const status = searchParams.get("status") || "all";
+    const category = searchParams.get("category") || "all";
+    const gender = searchParams.get("for");
+
+    const query: any = {};
+
+    if (search) {
+      query.name = { $regex: search, $options: "i" };
+    }
+
+    if (gender) {
+      query.gender = gender;
+    }
+
+    if (status !== "all") {
+      query.status = status;
+    }
+
+    if (category !== "all") {
+      query.category = category;
+    }
 
     const skip = (page - 1) * limit;
 
-    // Build filter query
-    const query: any = {};
-    if (category) query.category = category;
-    if (featured === "true") query.featured = true;
-    if (inStock === "true") query.inventory = { $gt: 0 };
-    if (isNewProduct === "true") query.isNewProduct = true;
-    if (isSale === "true") query.isSale = true;
-    if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
-      ];
-    }
+    const [products, total] = await Promise.all([
+      Product.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate({
+          path: "category",
+          select: "_id name",
+        })
+        .lean(),
+      Product.countDocuments(query),
+    ]);
 
-    // Connect to the database
-    await connectToDatabase();
+    const totalPages = Math.ceil(total / limit);
 
-    // Get total count for pagination
-    const total = await Product.countDocuments(query);
+    const hasMore = page < totalPages;
+    const nextPage = hasMore ? page + 1 : null;
 
-    // Get products with pagination, filtering, and sorting
-    const products = await Product.find(query)
-      .sort({ [sort]: order === "desc" ? -1 : 1 })
-      .skip(skip)
-      .limit(limit);
+    const filters = getAllProductFilters(products);
 
     return NextResponse.json({
-      success: true,
       data: products,
-      pagination: {
-        total,
-        page,
-        limit,
-        pages: Math.ceil(total / limit),
-      },
+      filters,
+      total,
+      totalPages,
+      currentPage: page,
+      hasMore,
+      nextPage,
     });
   } catch (error) {
-    console.error("Error fetching products:", error);
+    console.error("Product fetch error:", error);
     return NextResponse.json(
-      { success: false, error: "Internal server error" },
+      { error: "Failed to fetch products" },
       { status: 500 }
     );
   }

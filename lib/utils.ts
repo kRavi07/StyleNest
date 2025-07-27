@@ -13,13 +13,6 @@ export function formatDate(
   return format(new Date(dateString), formatStr);
 }
 
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount);
-}
-
 export function truncate(str: string, length: number): string {
   return str.length > length ? `${str.substring(0, length)}...` : str;
 }
@@ -37,3 +30,11 @@ export async function hashFile(file: File): Promise<string> {
   const buffer = await file.arrayBuffer();
   return hashFileBuffer(buffer);
 }
+
+// utils/formatCurrency
+export const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+  }).format(amount);
+};

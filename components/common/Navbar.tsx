@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, ShoppingBag, User, Search, Moon, Sun } from "lucide-react";
@@ -8,21 +8,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useTheme } from "next-themes";
-import { useCart } from "@/hooks/use-cart";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/store/auth";
+import { useCart } from "@/hooks/context/cart/cart-context";
+import CartCountIcon from "./cart-count-icon";
 
 const Navbar = () => {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
-  const { cart } = useCart();
   const { user, isAuthenticated } = useAuth();
 
   console.log(user, isAuthenticated);
   const [isMounted, setIsMounted] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  const cartItemsCount = cart?.items?.length || 0;
 
   useEffect(() => {
     setIsMounted(true);
@@ -100,16 +99,7 @@ const Navbar = () => {
                 <Moon className="h-5 w-5" />
               )}
             </Button>
-            <Button variant="ghost" size="icon" className="relative" asChild>
-              <Link href="/cart">
-                <ShoppingBag className="h-5 w-5" />
-                {cartItemsCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
-                    {cartItemsCount}
-                  </span>
-                )}
-              </Link>
-            </Button>
+            <CartCountIcon />
             {isAuthenticated ? (
               <Button variant="ghost" size="icon" asChild>
                 <Link href="/account">
@@ -125,16 +115,7 @@ const Navbar = () => {
 
           {/* Mobile Menu */}
           <div className="flex md:hidden items-center space-x-4">
-            <Button variant="ghost" size="icon" className="relative" asChild>
-              <Link href="/cart">
-                <ShoppingBag className="h-5 w-5" />
-                {cartItemsCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
-                    {cartItemsCount}
-                  </span>
-                )}
-              </Link>
-            </Button>
+            <CartCountIcon />
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -205,4 +186,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default memo(Navbar);

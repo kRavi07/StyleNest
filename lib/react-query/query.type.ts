@@ -45,16 +45,38 @@ export interface SellerOwnerDetails {
 }
 
 export interface AddProductProps {
-  Product_ID: string;
-  product_name: string;
-  discription: string;
-  price: string;
-  quantity: string;
+  name: string;
+  slug: string;
+  description: string;
+  price: number;
+  mrp: number;
   category: string;
-  sku: string;
-  files: any;
-  attributes: any;
-  priceRange: any;
+  subcategory?: string;
+  images?: File[] | string[];
+  inventory: number;
+  inventoryStatsus: string;
+  featured: boolean;
+  rating: number;
+  reviews: number;
+  isNewProduct: boolean;
+  isSale: boolean;
+  isActive: boolean;
+  variantAttribute?: string[];
+  variants?: {
+    name: string;
+    sku: string;
+    price: number;
+    stock: number;
+    images: string[];
+    optionValues: [{ name: String; value: String }];
+    attributes: Record<string, string>;
+  }[];
+  attributes: Record<string, string>;
+  seo: {
+    title: string;
+    description: string;
+    keywords: string;
+  };
 }
 
 export interface AddProductForSellerProps {
@@ -144,10 +166,14 @@ export interface VariantAttribute {
 }
 
 export interface CategoryProps {
-  category: string;
-  parent_category: string;
-  category_image: any;
-  category_description: string;
+  _id: string;
+  name: string;
+  slug: string;
+  parent: string | null;
+  image: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface FeedsProps {

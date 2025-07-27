@@ -1,11 +1,14 @@
 // Product types
 export type Product = {
-  id: string;
+  _id: string;
   name: string;
   description: string;
   price: number;
-  originalPrice?: number;
-  category: string;
+  mrp?: number;
+  category: {
+    _id: string;
+    name: string;
+  };
   subcategory: string;
   images: string[];
   inventory: number;
@@ -16,6 +19,30 @@ export type Product = {
   reviews: number;
   isNewProduct?: boolean;
   isSale?: boolean;
+};
+
+export type Variant = {
+  _id: string;
+  name: string;
+  sku: string;
+  price: number;
+  mrp: number;
+  stock: number;
+  images: string[];
+  optionValues: {
+    [key: string]: string; // e.g., color: "RED", size: "M"
+  };
+  attributes: {
+    name: string;
+    value: string;
+  }[];
+  isActive: boolean;
+  createdAt: string; // ISO timestamp
+  updatedAt: string; // ISO timestamp
+};
+
+export type VariantResponse = {
+  variants: Variant[];
 };
 
 export type ProductListView = {

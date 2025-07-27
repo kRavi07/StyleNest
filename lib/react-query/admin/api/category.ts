@@ -5,7 +5,18 @@ export const GetAllCategories = async () => {
   try {
     const token = getAdminToken();
     setAuthToken(token);
-    const res = await axiosInstance.get(`admin/categories`);
+    const res = await axiosInstance.get(`admin/category`);
+    return res.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const getSubCategories = async (id: string) => {
+  try {
+    const token = getAdminToken();
+    setAuthToken(token);
+    const res = await axiosInstance.get(`admin/category/${id}/subcategory`);
     return res.data;
   } catch (error) {
     handleError(error);

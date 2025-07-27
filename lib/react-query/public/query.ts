@@ -40,9 +40,8 @@ export const useFetchProductsInfinite = (
     queryKey: ["fetchProductsInfinite", name, category, productname],
     queryFn: ({ pageParam = 1 }) =>
       fetchProducts({
-        name,
         category,
-        productname,
+        name,
         limit,
         page: pageParam,
       }),
@@ -56,7 +55,6 @@ export const useFetchProductsInfinite = (
     initialPageParam: 1,
   });
 };
-
 export const useGetProduct = (id: string) => {
   return useQuery({
     queryKey: ["getProduct", id],

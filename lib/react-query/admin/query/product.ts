@@ -1,19 +1,60 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
 import {
   deleteProductImage,
+  fetchAllProducts,
   getAllProducts,
   makeProductFeatured,
   rejectProduct,
 } from "../api/product";
 import { toast } from "sonner";
+import { Product } from "@/types";
 
-export const fetchAllProducts = () => {
+type FetchProductsParams = {
+  pageParam?: number;
+  search?: string;
+  status?: string;
+  category?: string;
+};
+
+export type ProductResponse = {
+  items: Product[];
+  total: number;
+  totalPages: number;
+};
+
+export const useFetchProductsInfinite = (
+  name?: string,
+  category?: string,
+  productname?: string,
+  limit = 20 // Default limit to 20
+) => {
+  return useInfiniteQuery({
+    queryKey: ["fetchProductsInfinite", name, category, productname],
+    queryFn: ({ pageParam = 1 }) =>
+      fetchAllProducts({
+        category,
+        search: name,
+        limit,
+        page: pageParam,
+      }),
+    getNextPageParam: (lastPage) => {
+      if (lastPage.hasMore) {
+        return lastPage.nextPage;
+      } else {
+        return undefined;
+      }
+    },
+    initialPageParam: 1,
+  });
+};
+
+/*export const useFetchAllProducts = () => {
   return useQuery({
     queryKey: ["getAllProducts"],
     queryFn: () => getAllProducts(),
     staleTime: 60 * 1000 * 10,
   });
-};
+};*/
 
 export const useRejectProduct = () => {
   return useMutation({

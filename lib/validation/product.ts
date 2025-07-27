@@ -1,86 +1,108 @@
 import { z } from "zod";
 
-// Zod schema for SEO object
-const seoSchema = z.object({
-  title: z.string().min(1),
-  description: z.string().min(1),
-  keywords: z.string().min(1),
-});
-
-const optionValueSchema = z.object({
+// 🔹 OptionType schema
+const optionTypeSchema = z.object({
   name: z.string().min(1, { message: "Option name is required" }),
-  value: z.string().min(1, { message: "Option value is required" }),
+  values: z
+    .array(z.string().min(1, { message: "Option value cannot be empty" }))
+    .min(1),
 });
 
-export const variantSchema = z.object({
+// 🔹 Attribute schema (used for specifications and variant attributes)
+const attributeSchema = z.object({
+  name: z.string(),
+  value: z.string(),
+});
+
+// 🔹 SEO schema
+const seoSchema = z.object({
+  title: z.string().min(1, { message: "SEO title is required" }),
+  description: z.string().min(1, { message: "SEO description is required" }),
+  keywords: z.string().min(1, { message: "SEO keywords are required" }),
+});
+
+// 🔹 Variant schema
+const variantSchema = z.object({
   name: z.string().min(1, { message: "Variant name is required" }),
   sku: z.string().min(1, { message: "SKU is required" }),
-  price: z.preprocess((val) => {
-    const n = Number(val);
-    return isNaN(n) ? val : n;
-  }, z.number({ invalid_type_error: "Price must be a number" }).nonnegative({ message: "Price cannot be negative" })),
-  mrp: z.preprocess((val) => {
-    const n = Number(val);
-    return isNaN(n) ? val : n;
-  }, z.number({ invalid_type_error: "MRP must be a number" }).nonnegative({ message: "MRP cannot be negative" })),
-  stock: z.preprocess((val) => {
-    const n = Number(val);
-    return isNaN(n) ? val : n;
-  }, z.number({ invalid_type_error: "Stock must be a number" }).int({ message: "Stock must be an integer" }).nonnegative({ message: "Stock cannot be negative" })),
-  isActive: z.preprocess((val) => {
-    if (typeof val === "string") {
-      return val.toLowerCase() === "true";
-    }
-    return Boolean(val);
-  }, z.boolean({ invalid_type_error: "isActive must be a boolean" }).optional()),
+  price: z.number().nonnegative({ message: "Price cannot be negative" }),
+  mrp: z.number().nonnegative({ message: "MRP cannot be negative" }),
+  stock: z
+    .number()
+    .int()
+    .nonnegative({ message: "Stock must be a non-negative integer" }),
   images: z
-    .array(z.string().url({ message: "Each image must be a valid URL" }))
+    .array(z.union([z.string().url(), z.instanceof(File)]))
     .optional()
     .default([]),
-  optionValues: z.array(optionValueSchema).optional().default([]),
-  attributes: z.record(z.string()).optional().default({}),
+  optionValues: z.record(z.string(), z.string()).optional().default({}), // { name, value }
+  attributes: z.array(attributeSchema).optional().default([]), //
+  isActive: z.boolean().optional().default(true),
 });
 
-// Main Product schema
-export const CreateProductSchema = z.object({
+// 🔹 Main Product schema
+export const BaseProductSchema = z.object({
   name: z.string().min(1, { message: "Product name is required" }),
-  slug: z.string().min(1, { message: "Product slug is required" }),
-  description: z
-    .string()
-    .min(1, { message: "Product description is required" }),
+  slug: z.string().min(1, { message: "Slug is required" }),
+  shortDescription: z.string().min(3).max(200),
+  description: z.string().min(1),
   price: z
     .number()
-    .nonnegative({ message: "Price must be a non-negative number" }),
-  sku: z.string().optional(),
-  mrp: z.number().nonnegative(),
+    .nonnegative({ message: "Price cannot be negative" })
+    .optional(),
+  mrp: z.number().nonnegative({ message: "MRP cannot be negative" }).optional(),
   category: z.string().min(1, { message: "Category is required" }),
   subcategory: z.string().optional(),
+
   images: z
-    .union([z.instanceof(File), z.array(z.string().url())])
+    .array(z.union([z.string().url(), z.instanceof(File)]))
     .optional()
     .default([]),
-  inventory: z.number().int().nonnegative().optional().default(0),
-  inventoryStatsus: z
-    .enum(["in-stock", "out-of-stock", "pre-order"])
-    .optional()
-    .default("in-stock"),
+  inventory: z.number().int().nonnegative().default(0),
   featured: z.boolean().default(false),
   rating: z.number().min(0).max(5).default(0),
   reviews: z.number().int().nonnegative().default(0),
   isNewProduct: z.boolean().default(false),
   isSale: z.boolean().default(false),
   isActive: z.boolean().default(true),
-  variantAttribute: z.array(z.string()).optional().default([]),
+  gender: z.enum(["male", "female", "unisex"]).optional().default("unisex"),
+  hasVariants: z.boolean().default(false),
   variants: z.array(variantSchema).optional().default([]),
-  attributes: z.record(z.string()).optional().default({}),
+  specifications: z.array(attributeSchema).optional().default([]),
   seo: seoSchema,
-  isArchivred: z.boolean().optional().default(false),
-  isDeleted: z.boolean().optional().default(false),
   deletedAt: z.coerce.date().optional(),
   archivedAt: z.coerce.date().optional(),
 });
 
-export const UpdateProductSchema = CreateProductSchema.partial();
+// 🔹 Create Product Schema with preprocessor for `hasVariants`
+export const CreateProductSchema = z.preprocess((input) => {
+  if (typeof input === "object" && input !== null) {
+    const data = { ...(input as any) };
+    if (!data.hasVariants) {
+      data.variants = [];
+    } else {
+      //set variants attribute empty array if not present
+      for (let i = 0; i < data.variants.length; i++) {
+        if (
+          !data.variants[i].attributes ||
+          data.variants[i].attributes.length === 0 ||
+          data.variants[i].attributes === undefined ||
+          typeof data.variants[i].attributes === "object"
+        ) {
+          data.variants[i].attributes = [];
+        }
+      }
+    }
+
+    return data;
+  }
+  return input;
+}, BaseProductSchema);
+
+// 🔹 Partial schemas for update
+export const UpdateProductSchema = BaseProductSchema.partial();
 export const UpdateVariantSchema = variantSchema.partial();
 
+// 🔹 Types
 export type CreateProductFormData = z.infer<typeof CreateProductSchema>;
+export type VariantFormData = z.infer<typeof variantSchema>;

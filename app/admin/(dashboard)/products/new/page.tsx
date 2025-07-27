@@ -26,9 +26,13 @@ import MultipleFileUploader from "@/components/ui/file-uploader";
 import { useGetAllAttributeType } from "@/lib/react-query/public/query";
 import { useGetAttributes } from "@/lib/react-query/admin/query/attributes";
 import CreatableAsyncMultiSelect from "@/components/ui/multi-select";
-import AttributeSelector from "./components/attribute-selecto";
+import AttributeSelector, { AttributeWithValues } from "./components/attribute-selecto";
 import Variants from "./components/variants";
 import BasicDetails from "./components/basic-details";
+import { useAddProduct } from "@/lib/react-query/admin/queries";
+import { AddProductProps } from "@/lib/react-query/query.type";
+import { useGetAllCatgeories } from "@/lib/react-query/admin/query/category";
+import Specifications from "./components/specifications";
 
 
 export default function NewProductPage() {
@@ -36,39 +40,48 @@ export default function NewProductPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [hasVariants, setHasVariants] = useState(false);
+  const [selected, setSelected] = useState<AttributeWithValues[]>([]);
+
 
   const { data } = useGetAttributes();
+
+
+  const { mutateAsync: addProduct, isPending: isAddProductPending } = useAddProduct()
 
   const form = useForm<CreateProductFormData>({
     resolver: zodResolver(CreateProductSchema),
     defaultValues: {
       name: "",
       slug: "",
+      shortDescription: "",
       description: "",
       price: 0,
       mrp: 0,
       category: "",
+      gender: "unisex",
       subcategory: "",
       images: [],
       inventory: 0,
-      inventoryStatsus: "in-stock",
       featured: false,
       isNewProduct: false,
       isSale: false,
       isActive: true,
       variants: [{
         name: "",
-        mrp: 0,
         sku: "",
         price: 0,
         stock: 0,
+        mrp: 0,
         images: [],
-        optionValues: [{
-          value: "",
-          name: ""
-        }],
-        attributes: {},
+        optionValues: {},
+        attributes: [],
       }],
+      specifications: [
+        {
+          name: "",
+          value: ""
+        }
+      ],
       seo: {
         title: "",
         description: "",
@@ -77,12 +90,12 @@ export default function NewProductPage() {
     },
   });
 
-  const { control, formState: { errors } } = form;
+  const { control, formState: { errors }, handleSubmit } = form;
 
   const name = form.watch("name");
 
+
   useEffect(() => {
-    // Set the slug automatically based on the product name
     if (name) {
       const slug = name
         .toLowerCase()
@@ -102,27 +115,19 @@ export default function NewProductPage() {
 
   const onSubmit = async (data: CreateProductFormData) => {
     try {
+      console.log(data);
       setIsLoading(true);
 
-      // API call would go here
-      const response = await fetch('/api/products', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
 
-      if (!response.ok) {
-        throw new Error('Failed to create product');
-      }
+      await addProduct(data);
 
       toast({
         title: "Product created",
         description: "Your new product has been created successfully.",
       });
 
-      router.push("/products");
+
+
     } catch (error) {
       toast({
         variant: "destructive",
@@ -134,37 +139,48 @@ export default function NewProductPage() {
     }
   };
 
+  useEffect(() => {
+    if (errors) {
+      //iterate over errors
+      for (const [key, value] of Object.entries(errors)) {
+        console.log(key, value);
+      }
+    }
+  }, [errors]);
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">Add New Product</h2>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => router.back()}>
-            Cancel
-          </Button>
-          <Button onClick={form.handleSubmit(onSubmit)} disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                Creating...
-              </>
-            ) : (
-              <>
-                <Icons.check className="mr-2 h-4 w-4" />
-                Create Product
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-3xl font-bold tracking-tight">Add New Product</h2>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => router.back()}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Icons.check className="mr-2 h-4 w-4" />
+                  Create Product
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+
         <Tabs defaultValue="basic" className="space-y-4">
           <TabsList>
             <TabsTrigger value="basic">Basic Info</TabsTrigger>
             <TabsTrigger value="images">Images</TabsTrigger>
             <TabsTrigger value="variants">Variants</TabsTrigger>
             <TabsTrigger value="seo">SEO</TabsTrigger>
+            <TabsTrigger value="specifications">Specifications</TabsTrigger>
           </TabsList>
 
           <TabsContent value="basic">
@@ -180,11 +196,10 @@ export default function NewProductPage() {
               <CardContent className="space-y-4">
                 <MultipleFileUploader
                   acceptedFileType=".png,.jpg, .mp4 "
-                  name={"files"}
+                  name={"images"}
                   label={"Product Image"}
                   control={control}
                   errors={errors}
-                  isSubmitted={false}
                 />
 
                 {form.formState.errors.images && (
@@ -195,7 +210,7 @@ export default function NewProductPage() {
           </TabsContent>
 
           <TabsContent value="variants">
-            <Variants form={form} />
+            <Variants form={form} selected={selected} setSelected={setSelected} />
           </TabsContent>
 
           <TabsContent value="seo">
@@ -231,8 +246,23 @@ export default function NewProductPage() {
               </CardContent>
             </Card>
           </TabsContent>
+          <TabsContent value="specifications">
+            <Specifications form={form} />
+          </TabsContent>
         </Tabs>
       </form>
     </div>
   );
+}
+
+
+function mergeRecordArray(
+  attributes: (Record<string, string>)[]
+): Record<string, string> {
+  if (!attributes) return {};
+
+  return attributes.reduce((acc, record) => {
+    if (!record) return acc;
+    return { ...acc, ...record };
+  }, {});
 }

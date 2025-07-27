@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/accordion";
 import { X } from "lucide-react";
 
-type FiltersProps = {
+export type FiltersProps = {
   filters: {
     category: string;
     priceRange: number[];
@@ -26,13 +26,14 @@ type FiltersProps = {
     colors: string[];
     sizes: string[];
   };
+  filterAtrributes: any
   onChange: (name: string, value: any) => void;
   onClear: () => void;
 };
 
 const allColors = [
-  "Black", "White", "Gray", "Navy", "Blue", "Green", "Red", "Pink", 
-  "Purple", "Yellow", "Orange", "Brown", "Beige", "Khaki", "Olive", 
+  "Black", "White", "Gray", "Navy", "Blue", "Green", "Red", "Pink",
+  "Purple", "Yellow", "Orange", "Brown", "Beige", "Khaki", "Olive",
   "Burgundy", "Tan", "Gold", "Silver"
 ];
 
@@ -42,30 +43,46 @@ const allSizes = [
   "One Size"
 ];
 
-const ProductFilters = ({ filters, onChange, onClear }: FiltersProps) => {
+const ProductFilters = ({ filters, onChange, onClear, filterAtrributes }: FiltersProps) => {
   const [localPriceRange, setLocalPriceRange] = useState(filters.priceRange);
-  
+
+  console.log("ProductFilters filters:", filterAtrributes);
+
   const handlePriceChange = (value: number[]) => {
     setLocalPriceRange(value);
   };
-  
+
   const applyPriceRange = () => {
     onChange("priceRange", localPriceRange);
   };
-  
+
   const handleColorToggle = (color: string) => {
     const newColors = filters.colors.includes(color)
       ? filters.colors.filter(c => c !== color)
       : [...filters.colors, color];
     onChange("colors", newColors);
   };
-  
+
   const handleSizeToggle = (size: string) => {
     const newSizes = filters.sizes.includes(size)
       ? filters.sizes.filter(s => s !== size)
       : [...filters.sizes, size];
     onChange("sizes", newSizes);
   };
+
+  function handleFilterToggle(key: string, value: string, checked: boolean) {
+    const current = new Set(filters[key] || []);
+
+    if (checked) {
+      current.add(value);
+    } else {
+      current.delete(value);
+    }
+
+    onChange(key, Array.from(current));
+  }
+
+
 
   return (
     <div className="space-y-6">
@@ -77,18 +94,18 @@ const ProductFilters = ({ filters, onChange, onClear }: FiltersProps) => {
           }
           return val !== 'all' && val !== 'featured' && val !== false;
         }) && (
-          <Button variant="ghost" size="sm" onClick={onClear}>
-            Clear All
-            <X className="ml-1 h-4 w-4" />
-          </Button>
-        )}
+            <Button variant="ghost" size="sm" onClick={onClear}>
+              Clear All
+              <X className="ml-1 h-4 w-4" />
+            </Button>
+          )}
       </div>
-      
+
       <Separator />
-      
+
       <div>
         <h3 className="text-sm font-medium mb-3">Category</h3>
-        <RadioGroup 
+        <RadioGroup
           value={filters.category}
           onValueChange={value => onChange("category", value)}
           className="space-y-2"
@@ -111,9 +128,9 @@ const ProductFilters = ({ filters, onChange, onClear }: FiltersProps) => {
           </div>
         </RadioGroup>
       </div>
-      
+
       <Separator />
-      
+
       <div>
         <h3 className="text-sm font-medium mb-3">Price Range</h3>
         <div className="space-y-4">
@@ -131,12 +148,12 @@ const ProductFilters = ({ filters, onChange, onClear }: FiltersProps) => {
           </div>
         </div>
       </div>
-      
+
       <Separator />
-      
+
       <div>
         <h3 className="text-sm font-medium mb-3">Sort By</h3>
-        <RadioGroup 
+        <RadioGroup
           value={filters.sortBy}
           onValueChange={value => onChange("sortBy", value)}
           className="space-y-2"
@@ -163,39 +180,39 @@ const ProductFilters = ({ filters, onChange, onClear }: FiltersProps) => {
           </div>
         </RadioGroup>
       </div>
-      
+
       <Separator />
-      
+
       <div className="space-y-2">
         <h3 className="text-sm font-medium mb-1">Options</h3>
         <div className="flex items-center space-x-2">
-          <Checkbox 
-            id="in-stock" 
+          <Checkbox
+            id="in-stock"
             checked={filters.onlyInStock}
             onCheckedChange={checked => onChange("onlyInStock", !!checked)}
           />
           <Label htmlFor="in-stock">In Stock Only</Label>
         </div>
         <div className="flex items-center space-x-2">
-          <Checkbox 
-            id="on-sale" 
+          <Checkbox
+            id="on-sale"
             checked={filters.onlySale}
             onCheckedChange={checked => onChange("onlySale", !!checked)}
           />
           <Label htmlFor="on-sale">On Sale</Label>
         </div>
         <div className="flex items-center space-x-2">
-          <Checkbox 
-            id="new-arrivals" 
+          <Checkbox
+            id="new-arrivals"
             checked={filters.onlyNew}
             onCheckedChange={checked => onChange("onlyNew", !!checked)}
           />
           <Label htmlFor="new-arrivals">New Arrivals</Label>
         </div>
       </div>
-      
+
       <Separator />
-      
+
       <Accordion type="multiple" defaultValue={["colors", "sizes"]}>
         <AccordionItem value="colors">
           <AccordionTrigger>Colors</AccordionTrigger>
@@ -203,8 +220,8 @@ const ProductFilters = ({ filters, onChange, onClear }: FiltersProps) => {
             <div className="grid grid-cols-2 gap-2">
               {allColors.map(color => (
                 <div key={color} className="flex items-center space-x-2">
-                  <Checkbox 
-                    id={`color-${color.toLowerCase()}`} 
+                  <Checkbox
+                    id={`color-${color.toLowerCase()}`}
                     checked={filters.colors.includes(color)}
                     onCheckedChange={() => handleColorToggle(color)}
                   />
@@ -214,15 +231,15 @@ const ProductFilters = ({ filters, onChange, onClear }: FiltersProps) => {
             </div>
           </AccordionContent>
         </AccordionItem>
-        
+
         <AccordionItem value="sizes">
           <AccordionTrigger>Sizes</AccordionTrigger>
           <AccordionContent>
             <div className="grid grid-cols-2 gap-2">
               {allSizes.map(size => (
                 <div key={size} className="flex items-center space-x-2">
-                  <Checkbox 
-                    id={`size-${size.toLowerCase().replace(" ", "-")}`} 
+                  <Checkbox
+                    id={`size-${size.toLowerCase().replace(" ", "-")}`}
                     checked={filters.sizes.includes(size)}
                     onCheckedChange={() => handleSizeToggle(size)}
                   />
@@ -232,7 +249,39 @@ const ProductFilters = ({ filters, onChange, onClear }: FiltersProps) => {
             </div>
           </AccordionContent>
         </AccordionItem>
+
       </Accordion>
+
+
+      <Accordion type="multiple" defaultValue={Object.keys(filterAtrributes[0] || {})}>
+        {filterAtrributes != undefined && filterAtrributes.length > 0 && Object.entries(filterAtrributes[0]).map(([key, values]) => (
+          <AccordionItem value={key} key={key}>
+            <AccordionTrigger className="capitalize">{key}</AccordionTrigger>
+            <AccordionContent>
+              <div className="grid grid-cols-2 gap-2">
+                {values.map((value) => {
+                  const id = `${key}-${value.toLowerCase().replace(/\s+/g, "-")}`;
+                  const isChecked = (filters[key] || []).includes(value)
+
+
+                  return (
+                    <div key={value} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={id}
+                        checked={isChecked}
+                        onCheckedChange={(checked) => handleFilterToggle(key, value, !!checked)}
+                      />
+
+                      <Label htmlFor={id}>{value}</Label>
+                    </div>
+                  );
+                })}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
+
     </div>
   );
 };

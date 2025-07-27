@@ -3,6 +3,8 @@ import { AddProductProps, CategoryProps } from "../query.type";
 import { createFormData, getAdminToken, handleError } from "../util";
 import axiosInstance, { setAuthToken } from "./axiosInstance";
 import { CategoryFormData } from "@/lib/validation/category";
+import { ProductDocument } from "@/lib/db/models/product";
+import { CreateProductFormData } from "@/lib/validation/product";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
 
@@ -50,48 +52,97 @@ export const addCategory = async (data: CategoryFormData) => {
 };
 
 export const addProduct = async ({
-  product_name,
-  discription,
+  name,
+  slug,
+  description,
+  shortDescription,
   price,
-  quantity,
+  mrp,
   category,
-  files,
-  attributes,
-  priceRange,
-}: AddProductProps) => {
+  subcategory,
+  images,
+  inventory,
+  featured,
+  gender,
+  rating,
+  reviews,
+  isNewProduct,
+  isSale,
+  isActive,
+  hasVariants,
+  variants,
+  specifications,
+  seo,
+}: CreateProductFormData) => {
   try {
     const token = getAdminToken();
 
-    if (!token) {
-      throw new Error("Token not found");
-    }
-    setAuthToken(token);
+    console.log(variants);
 
-    const attributesList = JSON.stringify(attributes);
-    const priceRangeJson = JSON.stringify(priceRange);
+    const variantsWithoutImages = variants.map(({ images, ...rest }) => rest);
+
+    const attributesList = JSON.stringify(specifications);
 
     const formData = new FormData();
 
-    formData.append("product_name", product_name);
-    formData.append("discription", discription);
-    formData.append("price", price);
-    formData.append("quantity", quantity);
+    formData.append("name", name);
+    formData.append("slug", slug);
+    formData.append("description", description);
+    formData.append("shortDescription", shortDescription);
+    if (price) {
+      formData.append("price", price.toFixed(2));
+    }
+    if (mrp) {
+      formData.append("mrp", mrp.toFixed(2));
+    }
+    if (rating) {
+      formData.append("rating", rating.toFixed(2));
+    }
+    if (reviews) {
+      formData.append("reviews", reviews.toFixed(2));
+    }
     formData.append("category", category);
+    if (gender) {
+      formData.append("gender", gender);
+    }
+    if (subcategory) {
+      formData.append("subcategory", subcategory);
+    }
+    formData.append("inventory", inventory.toFixed(2));
+    formData.append("featured", featured.toString());
+    formData.append("isNewProduct", isNewProduct.toString());
+    formData.append("isSale", isSale.toString());
+    formData.append("isActive", isActive.toString());
+    formData.append("hasVariants", hasVariants.toString());
+    formData.append("variants", JSON.stringify(variantsWithoutImages));
 
-    if (files !== null) {
-      for (let i = 0; i < files.length; i++) {
-        formData.append("files", files[i]);
+    variants.forEach((variant, i) => {
+      if (variant.images && variant.images !== null) {
+        for (let j = 0; j < variant.images.length; j++) {
+          formData.append(`variants[${i}].images`, variant.images[j]);
+        }
+      }
+    });
+
+    formData.append("seo", JSON.stringify(seo));
+
+    if (images && images !== null) {
+      for (let i = 0; i < images.length; i++) {
+        formData.append("images", images[i]);
       }
     }
 
-    formData.append("attributes", attributesList);
-    formData.append("priceRange", priceRangeJson);
+    formData.append("specifications", attributesList);
 
-    const res = await axiosInstance.post(`/admin/add-product`, formData, {
+    console.log(formData);
+    console.log("Inside add product last");
+
+    const res = await axiosInstance.post(`/admin/products`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
     });
+    console.log(res.data);
     return res.data;
   } catch (error) {
     handleError(error);

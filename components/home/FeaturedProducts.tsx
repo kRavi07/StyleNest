@@ -5,11 +5,12 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useCart } from "@/hooks/use-cart";
 import { Heart, ShoppingBag, Eye } from "lucide-react";
 import { Product } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useCart } from "@/hooks/context/cart/cart-context";
+import { useCartStore } from "@/hooks/store/cart/use-cart";
 
 // Mock data - would come from API in real app
 const featuredProducts: Product[] = [
@@ -120,7 +121,7 @@ const featuredProducts: Product[] = [
 ];
 
 const ProductCard = ({ product }: { product: Product }) => {
-  const { addItem } = useCart();
+  const { addItem } = useCartStore((state) => state)
   const { toast } = useToast();
   const [isHovered, setIsHovered] = useState(false);
 

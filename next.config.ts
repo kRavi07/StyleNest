@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
   // output: 'export',
 
   images: {
-    domains: ["yourcdn.com", "res.cloudinary.com"], // Add trusted image domains
+    domains: ["yourcdn.com", "res.cloudinary.com", "images.pexels.com"], // Add trusted image domains
   },
 
   experimental: {

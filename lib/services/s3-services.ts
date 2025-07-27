@@ -54,7 +54,7 @@ export async function uploadToS3({
   }
 }
 
-async function generatePresignedUrl(s3Key: string) {
+export async function generatePresignedUrl(s3Key: string) {
   const command = new GetObjectCommand({
     Bucket: process.env.S3_BUCKET_NAME,
     Key: s3Key,

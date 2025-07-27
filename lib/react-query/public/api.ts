@@ -2,6 +2,7 @@ import axios from "axios";
 import { handleError } from "../util";
 import { FetchProductProps, TicketProps } from "../query.type";
 import { API_URL } from "@/lib/constants";
+import qs from "qs";
 
 type FetchProductsFunction = () => Promise<FetchProductProps[]>;
 
@@ -19,9 +20,18 @@ export const fetchProducts = async ({
   page?: number;
 }) => {
   try {
-    const res = await axios.get(
-      `${API_URL}/product?name=${name}&category=${category}&productname=${productname}&limit=${limit}&page=${page}`
+    const query = qs.stringify(
+      {
+        name,
+        category,
+        productname,
+        limit: limit || 20,
+        page,
+      },
+      { skipNulls: true }
     );
+
+    const res = await axios.get(`${API_URL}/products?${query}`);
 
     return res.data;
   } catch (error) {
@@ -31,8 +41,8 @@ export const fetchProducts = async ({
 
 export const getProduct = async (id: string) => {
   try {
-    const res = await axios.get(`${API_URL}/getproduct`, {
-      params: { productId: id },
+    const res = await axios.get(`${API_URL}/products`, {
+      params: { id },
     });
     return res.data;
   } catch (error) {

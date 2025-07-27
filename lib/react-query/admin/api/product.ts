@@ -1,6 +1,36 @@
 import { getAdminToken, handleError } from "../../util";
 import axiosInstance, { setAuthToken } from "../axiosInstance";
+import { ProductResponse } from "../query/product";
 
+export const fetchAllProducts = async ({
+  page,
+  search,
+  status,
+  category,
+  limit = 20,
+}: {
+  page: number;
+  search?: string;
+  status?: string;
+  category?: string;
+  limit?: number;
+}) => {
+  try {
+    const res = await axiosInstance.get("/admin/products", {
+      params: {
+        page,
+        limit: 20,
+        search,
+        status,
+        category,
+      },
+    });
+
+    return res.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
 export const getAllProducts = async () => {
   try {
     const token = getAdminToken();
