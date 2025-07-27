@@ -6,8 +6,8 @@ import TrendingSection from "@/components/home/TrendingSection";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Attire | Premium Clothing Store",
-  description: "Discover the latest fashion trends and premium clothing at Attire",
+  title: "StyleNest | Premium Clothing Store",
+  description: "Discover the latest fashion trends and premium clothing at StyleNest. Shop now for exclusive styles and quality apparel.",
 };
 
 export default function Home() {

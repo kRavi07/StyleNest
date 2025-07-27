@@ -10,7 +10,9 @@ const Footer = () => {
       <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           <div className="space-y-4">
-            <h3 className="text-lg font-medium">ATTIRE</h3>
+            <h3 className="text-lg font-medium">
+              StyleNest
+            </h3>
             <p className="text-sm text-muted-foreground max-w-xs">
               Premium clothing and accessories for the modern lifestyle. Quality craftsmanship meets contemporary design.
             </p>
@@ -110,11 +112,11 @@ const Footer = () => {
             </ul>
           </div>
         </div>
-        
+
         <div className="mt-12 border-t pt-8">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <p className="text-xs text-muted-foreground">
-              &copy; {currentYear} Attire. All rights reserved.
+              &copy; {currentYear} StyleNest. All rights reserved.
             </p>
             <div className="flex gap-4 text-xs text-muted-foreground">
               <Link href="/privacy-policy" className="hover:text-foreground transition-colors">

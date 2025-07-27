@@ -59,7 +59,7 @@ const Navbar = () => {
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="text-xl font-bold tracking-tighter">
-              ATTIRE
+              StyleNest
             </Link>
           </div>
 
@@ -126,7 +126,7 @@ const Navbar = () => {
                 <div className="flex flex-col h-full">
                   <div className="flex items-center justify-between py-4">
                     <Link href="/" className="text-xl font-bold tracking-tighter">
-                      ATTIRE
+                      StyleNest
                     </Link>
                   </div>
                   <nav className="flex flex-col space-y-6 py-6">
