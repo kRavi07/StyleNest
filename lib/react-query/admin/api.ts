@@ -1,12 +1,8 @@
-import axios, { AxiosRequestConfig } from "axios";
-import { AddProductProps, CategoryProps } from "../query.type";
+import { AxiosRequestConfig } from "axios";
 import { createFormData, getAdminToken, handleError } from "../util";
 import axiosInstance, { setAuthToken } from "./axiosInstance";
 import { CategoryFormData } from "@/lib/validation/category";
-import { ProductDocument } from "@/lib/db/models/product";
 import { CreateProductFormData } from "@/lib/validation/product";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
 
 const config: AxiosRequestConfig = {
   headers: {
@@ -24,9 +20,8 @@ export const adminRegister = async (data: any) => {
 };
 
 export const addCategory = async (data: CategoryFormData) => {
-  console.log(data);
   try {
-    const { name, slug, parent, image, isActive } = data;
+    const { name, slug, parent, image } = data;
 
     const formData = new FormData();
 
@@ -75,10 +70,7 @@ export const addProduct = async ({
   seo,
 }: CreateProductFormData) => {
   try {
-    const token = getAdminToken();
-
-    console.log(variants);
-
+    // eslint-disable-next-line no-unused-vars
     const variantsWithoutImages = variants.map(({ images, ...rest }) => rest);
 
     const attributesList = JSON.stringify(specifications);
@@ -126,26 +118,27 @@ export const addProduct = async ({
 
     formData.append("seo", JSON.stringify(seo));
 
-    if (images && images !== null) {
-      for (let i = 0; i < images.length; i++) {
-        formData.append("images", images[i]);
-      }
+    const filesArray = !images ? [] : Array.isArray(images) ? images : [images];
+
+    if (filesArray.length < 1) {
+      throw new Error("At least one image is required");
     }
 
-    formData.append("specifications", attributesList);
+    // Append to FormData
+    filesArray.forEach((file) => {
+      formData.append("images", file);
+    });
 
-    console.log(formData);
-    console.log("Inside add product last");
+    formData.append("specifications", attributesList);
 
     const res = await axiosInstance.post(`/admin/products`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
     });
-    console.log(res.data);
     return res.data;
   } catch (error) {
-    handleError(error);
+    throw new Error(handleError(error));
   }
 };
 
@@ -206,86 +199,11 @@ export const approveSeller = async (id: string) => {
   }
 };
 
-export const updateProduct = async ({
-  Product_ID,
-  product_name,
-  discription,
-  price,
-  category,
-  sku,
-  files,
-  attributes,
-  priceRange,
-}: AddProductProps) => {
-  try {
-    const token = getAdminToken();
-
-    setAuthToken(token);
-
-    //check if attributes array contains "" empty string
-    if (attributes.includes("")) {
-      attributes = "";
-    }
-
-    //check if priceRange array contains
-
-    const formData = new FormData();
-
-    if (product_name !== undefined) {
-      formData.append("product_name", product_name);
-    }
-    if (discription !== undefined) {
-      formData.append("discription", discription);
-    }
-    if (price !== undefined) {
-      formData.append("price", price);
-    }
-    if (category !== undefined) {
-      formData.append("category", category);
-    }
-    if (sku !== undefined) {
-      formData.append("sku", sku);
-    }
-
-    if (files !== undefined && files !== null) {
-      for (let i = 0; i < files.length; i++) {
-        formData.append("files", files[i]);
-      }
-    }
-    if (attributes !== undefined && attributes !== null) {
-      const attributesList = JSON.stringify(attributes);
-      formData.append("attributes", attributesList);
-    }
-
-    if (priceRange !== undefined && priceRange !== null) {
-      const priceRangeJson = JSON.stringify(priceRange);
-
-      formData.append("priceRange", priceRangeJson);
-    }
-
-    const res = await axiosInstance.put(
-      `admin/update-product/${Product_ID}`,
-      formData,
-
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
-    );
-    return res.data;
-  } catch (error) {
-    handleError(error);
-  }
-};
-
 export const deleteProduct = async (id: string) => {
   try {
     const token = getAdminToken();
     setAuthToken(token);
-    const res = await axiosInstance.delete(
-      `${API_URL}/admin/delete-product?id=${id}`
-    );
+    const res = await axiosInstance.delete(`/admin/delete-product?id=${id}`);
     return res.data;
   } catch (error) {
     handleError(error);

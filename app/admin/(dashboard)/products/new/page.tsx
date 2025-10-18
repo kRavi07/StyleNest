@@ -4,49 +4,32 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Icons } from "@/components/admin/icons";
-import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { CreateProductFormData, CreateProductSchema } from "@/lib/validation/product";
 import MultipleFileUploader from "@/components/ui/file-uploader";
-import { useGetAllAttributeType } from "@/lib/react-query/public/query";
-import { useGetAttributes } from "@/lib/react-query/admin/query/attributes";
-import CreatableAsyncMultiSelect from "@/components/ui/multi-select";
-import AttributeSelector, { AttributeWithValues } from "./components/attribute-selecto";
+import { AttributeWithValues } from "./components/attribute-selecto";
 import Variants from "./components/variants";
 import BasicDetails from "./components/basic-details";
 import { useAddProduct } from "@/lib/react-query/admin/queries";
-import { AddProductProps } from "@/lib/react-query/query.type";
-import { useGetAllCatgeories } from "@/lib/react-query/admin/query/category";
 import Specifications from "./components/specifications";
+import { toast } from "sonner";
 
 
 export default function NewProductPage() {
   const router = useRouter();
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [hasVariants, setHasVariants] = useState(false);
   const [selected, setSelected] = useState<AttributeWithValues[]>([]);
 
 
-  const { data } = useGetAttributes();
 
 
-  const { mutateAsync: addProduct, isPending: isAddProductPending } = useAddProduct()
+  const { mutateAsync: addProduct, } = useAddProduct()
 
   const form = useForm<CreateProductFormData>({
     resolver: zodResolver(CreateProductSchema),
@@ -90,7 +73,7 @@ export default function NewProductPage() {
     },
   });
 
-  const { control, formState: { errors }, handleSubmit } = form;
+  const { control, formState: { errors } } = form;
 
   const name = form.watch("name");
 
@@ -115,38 +98,25 @@ export default function NewProductPage() {
 
   const onSubmit = async (data: CreateProductFormData) => {
     try {
-      console.log(data);
       setIsLoading(true);
 
 
-      await addProduct(data);
 
-      toast({
-        title: "Product created",
-        description: "Your new product has been created successfully.",
-      });
+      toast.promise(
+        addProduct(data), {
+        loading: 'Creating product...',
+        success: 'Product created successfully!',
+        error: 'Failed to create product. Please try again.',
+      })
 
 
 
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to create product. Please try again.",
-      });
+      toast.error("Failed to create product. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (errors) {
-      //iterate over errors
-      for (const [key, value] of Object.entries(errors)) {
-        console.log(key, value);
-      }
-    }
-  }, [errors]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -256,13 +226,4 @@ export default function NewProductPage() {
 }
 
 
-function mergeRecordArray(
-  attributes: (Record<string, string>)[]
-): Record<string, string> {
-  if (!attributes) return {};
 
-  return attributes.reduce((acc, record) => {
-    if (!record) return acc;
-    return { ...acc, ...record };
-  }, {});
-}

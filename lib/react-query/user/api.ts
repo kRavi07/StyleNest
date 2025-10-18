@@ -1,93 +1,99 @@
-import axios, { AxiosRequestConfig } from "axios";
-import { createFormData, getUserToken, handleError } from "../util";
-import { RegisterFormProps } from "@/app/auth/register/RegisterForm";
-import { API_URL } from "@/lib/configs/constants";
+import axios from "axios";
+import { getUserToken, handleError } from "../util";
+import { CartItem } from "@/hooks/store/cart/use-cart";
+import { protectedAxios } from "../axiosInstances";
+import { Address } from "@/types";
 
-export const sendProductEnquiry = async (data: any) => {
+export const syncCart = async (cartItems: CartItem[]) => {
   try {
-    //modify quantity from string to integer
-    data.quantity = parseInt(data.quantity);
-
-    console.log(data);
-    const userToken = getUserToken();
-    const config = {
+    const res = await protectedAxios.post(`/cart/sync`, cartItems, {
       headers: {
         "Content-Type": "application/json",
-        token: userToken,
       },
-    };
-
-    const res = await axios.post(`${API_URL}/product-enquiry`, data, config);
+    });
     return res.data;
   } catch (error) {
-    throw new Error("SOmething went wrong");
-  }
-};
-
-export const updateUserDetails = async ({
-  mobileno,
-  user_name,
-  email,
-  user_address,
-}: RegisterFormProps) => {
-  try {
-    const res = await axios.post(
-      `${API_URL}/update-user`,
-      createFormData(
-        ["mobileno", "user_name", "email", "user_address"],
-        [mobileno, user_name, email, user_address]
-      )
-    );
-    return res.data;
-  } catch (err) {
-    handleError(err);
-  }
-};
-
-export const getUserEnquiries = async () => {
-  try {
-    const userToken = getUserToken();
-    const config = {
-      headers: {
-        "Content-Type": "application/json",
-        token: userToken,
-      },
-    };
-    const res = await axios.get(`${API_URL}/get-enquiry`, config);
-    return res.data;
-  } catch (error) {
-    handleError(error);
+    throw new Error(handleError(error));
   }
 };
 
 export const loadUser = async () => {
   try {
-    const token = getUserToken();
+    const res = await axios.get(`/auth/me`);
+    return res.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
 
-    const res = await axios.get(`${API_URL}/load-user`, {
+export const addAddress = async (data: Address) => {
+  try {
+    const res = await protectedAxios.post(`/address`, data, {
       headers: {
-        token: token,
+        "Content-Type": "application/json",
       },
     });
     return res.data;
   } catch (error) {
-    handleError(error);
+    throw new Error(handleError(error));
   }
 };
 
-export const updateProfile = async (data: any) => {
+export const getAddresses = async () => {
   try {
-    const token = getUserToken();
-    const config = {
+    const res = await protectedAxios.get(`/address`, {
       headers: {
         "Content-Type": "application/json",
-        token: token,
       },
-    };
-    const res = await axios.put(`${API_URL}/user/update-profile`, data, config);
+    });
     return res.data;
   } catch (error) {
-    handleError(error);
+    throw new Error(handleError(error));
+  }
+};
+
+export const deleteAddress = async (addressId: string) => {
+  try {
+    const res = await protectedAxios.delete(`/address?addressId=${addressId}`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return res.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+
+export const updateAddress = async (data: Address) => {
+  try {
+    const res = await protectedAxios.put(`/address`, data, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return res.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+
+export const getProfile = async () => {
+  try {
+    const res = await protectedAxios.get(`/auth/me`);
+    return res.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+export const updateProfile = async (data: { field: string; value: string }) => {
+  try {
+    const res = await axios.put(`/auth/me`, {
+      [data.field]: data.value,
+    });
+    return res.data;
+  } catch (error) {
+    throw new Error(handleError(error));
   }
 };
 
@@ -102,7 +108,7 @@ export const postReview = async (data: any) => {
       },
     };
 
-    const res = await axios.post(`${API_URL}/post-review`, data, config);
+    const res = await axios.post(`/post-review`, data, config);
 
     return res.data;
   } catch (error) {

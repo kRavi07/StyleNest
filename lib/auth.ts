@@ -9,9 +9,6 @@ interface DecodedToken {
 
 // Verify JWT token from request headers
 export async function verifyToken(req: NextRequest) {
-  // Get authorization header
-  const authHeader = req.headers.get("authorization");
-
   const token = req.cookies.get("token")?.value || "";
 
   /*if (!authHeader || !authHeader.startsWith("Bearer ")) {

@@ -1,9 +1,10 @@
 import { Icons } from "@/components/admin/icons";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import Link from "next/link";
 
 
-const ActionMenu = () => {
+const ActionMenu = ({ id }: { id: string }) => {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -19,8 +20,11 @@ const ActionMenu = () => {
                     <span>View details</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                    <Icons.edit className="mr-2 h-4 w-4" />
-                    <span>Edit product</span>
+                    <Link className="flex flex-row " href={`/admin/products/update/${id}`}>
+
+                        <Icons.edit className="mr-2 h-4 w-4" />
+                        <span>Edit product</span>
+                    </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>

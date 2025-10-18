@@ -1,277 +1,148 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export type FiltersProps = {
-  filters: {
-    category: string;
-    priceRange: number[];
-    sortBy: string;
-    onlyInStock: boolean;
-    onlySale: boolean;
-    onlyNew: boolean;
-    colors: string[];
-    sizes: string[];
-  };
-  filterAtrributes: any
-  onChange: (name: string, value: any) => void;
+interface ProductFiltersProps {
+  filters: Record<string, any>;
+  filterAttributes: Record<string, string[]>; // dynamic specifications
+  // eslint-disable-next-line no-unused-vars
+  onChange: (key: string, value: any) => void;
   onClear: () => void;
-};
+  className?: string;
+}
 
-const allColors = [
-  "Black", "White", "Gray", "Navy", "Blue", "Green", "Red", "Pink",
-  "Purple", "Yellow", "Orange", "Brown", "Beige", "Khaki", "Olive",
-  "Burgundy", "Tan", "Gold", "Silver"
-];
+export default function ProductFilters({
+  filters,
+  filterAttributes,
+  onChange,
+  onClear,
+  className,
+}: ProductFiltersProps) {
+  const [localPriceRange, setLocalPriceRange] = useState(filters.priceRange || [0, 5000]);
 
-const allSizes = [
-  "XS", "S", "M", "L", "XL", "XXL",
-  "28", "30", "32", "34", "36", "38", "40", "42",
-  "One Size"
-];
+  useEffect(() => {
+    setLocalPriceRange(filters.priceRange || [0, 5000]);
+  }, [filters.priceRange]);
 
-const ProductFilters = ({ filters, onChange, onClear, filterAtrributes }: FiltersProps) => {
-  const [localPriceRange, setLocalPriceRange] = useState(filters.priceRange);
+  const applyPriceRange = () => onChange("priceRange", localPriceRange);
 
-  console.log("ProductFilters filters:", filterAtrributes);
-
-  const handlePriceChange = (value: number[]) => {
-    setLocalPriceRange(value);
+  const toggleArrayFilter = (key: string, value: string) => {
+    const arr: string[] = Array.isArray(filters[key]) ? filters[key] : [];
+    const newArr = arr.includes(value) ? arr.filter(v => v !== value) : [...arr, value];
+    onChange(key, newArr);
   };
 
-  const applyPriceRange = () => {
-    onChange("priceRange", localPriceRange);
-  };
+  const hasActiveFilters = Object.entries(filters).some(([key, val]) => {
+    if (["page", "limit"].includes(key)) return false;
+    if (Array.isArray(val)) return val.length > 0;
+    return val !== "all" && val !== "featured" && val !== false;
+  });
 
-  const handleColorToggle = (color: string) => {
-    const newColors = filters.colors.includes(color)
-      ? filters.colors.filter(c => c !== color)
-      : [...filters.colors, color];
-    onChange("colors", newColors);
-  };
-
-  const handleSizeToggle = (size: string) => {
-    const newSizes = filters.sizes.includes(size)
-      ? filters.sizes.filter(s => s !== size)
-      : [...filters.sizes, size];
-    onChange("sizes", newSizes);
-  };
-
-  function handleFilterToggle(key: string, value: string, checked: boolean) {
-    const current = new Set(filters[key] || []);
-
-    if (checked) {
-      current.add(value);
-    } else {
-      current.delete(value);
-    }
-
-    onChange(key, Array.from(current));
-  }
-
-
+  console.log(filterAttributes);
 
   return (
-    <div className="space-y-6">
+    <div className={cn("space-y-6", className)}>
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-medium">Filters</h2>
-        {Object.values(filters).some(val => {
-          if (Array.isArray(val)) {
-            return val.length > 0 || (val.length === 2 && (val[0] > 0 || val[1] < 500));
-          }
-          return val !== 'all' && val !== 'featured' && val !== false;
-        }) && (
-            <Button variant="ghost" size="sm" onClick={onClear}>
-              Clear All
-              <X className="ml-1 h-4 w-4" />
-            </Button>
-          )}
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={onClear}>
+            Clear All <X className="ml-1 h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       <Separator />
 
-      <div>
-        <h3 className="text-sm font-medium mb-3">Category</h3>
-        <RadioGroup
-          value={filters.category}
-          onValueChange={value => onChange("category", value)}
-          className="space-y-2"
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="all" id="category-all" />
-            <Label htmlFor="category-all">All Products</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="men" id="category-men" />
-            <Label htmlFor="category-men">Men</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="women" id="category-women" />
-            <Label htmlFor="category-women">Women</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="accessories" id="category-accessories" />
-            <Label htmlFor="category-accessories">Accessories</Label>
-          </div>
-        </RadioGroup>
-      </div>
+      {/* Category */}
+      {filters.categories?.length > 0 && (
+        <div>
+          <h3 className="text-sm font-medium mb-3">Category</h3>
+          <RadioGroup value={filters.category} onValueChange={v => onChange("category", v)} className="space-y-2">
+            {["all", ...filters.categories].map(c => (
+              <div key={c} className="flex items-center space-x-2">
+                <RadioGroupItem value={c} id={`category-${c}`} />
+                <Label htmlFor={`category-${c}`}>{c}</Label>
+              </div>
+            ))}
+          </RadioGroup>
+        </div>
+      )}
 
       <Separator />
 
+      {/* Price */}
       <div>
         <h3 className="text-sm font-medium mb-3">Price Range</h3>
-        <div className="space-y-4">
-          <Slider
-            value={localPriceRange}
-            min={0}
-            max={500}
-            step={10}
-            onValueChange={handlePriceChange}
-            onValueCommit={applyPriceRange}
-          />
-          <div className="flex items-center justify-between">
-            <span className="text-sm">${localPriceRange[0]}</span>
-            <span className="text-sm">${localPriceRange[1]}</span>
-          </div>
+        <Slider
+          value={localPriceRange}
+          min={0}
+          max={5000}
+          step={10}
+          onValueChange={setLocalPriceRange}
+          onValueCommit={applyPriceRange}
+        />
+        <div className="flex justify-between text-sm">
+          <span>${localPriceRange[0]}</span>
+          <span>${localPriceRange[1]}</span>
         </div>
       </div>
 
       <Separator />
 
+      {/* Sort */}
       <div>
         <h3 className="text-sm font-medium mb-3">Sort By</h3>
-        <RadioGroup
-          value={filters.sortBy}
-          onValueChange={value => onChange("sortBy", value)}
-          className="space-y-2"
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="featured" id="sort-featured" />
-            <Label htmlFor="sort-featured">Featured</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="price-low-high" id="sort-price-low" />
-            <Label htmlFor="sort-price-low">Price: Low to High</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="price-high-low" id="sort-price-high" />
-            <Label htmlFor="sort-price-high">Price: High to Low</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="newest" id="sort-newest" />
-            <Label htmlFor="sort-newest">Newest</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="rating" id="sort-rating" />
-            <Label htmlFor="sort-rating">Highest Rated</Label>
-          </div>
+        <RadioGroup value={filters.sortBy} onValueChange={v => onChange("sortBy", v)} className="space-y-2">
+          {["featured", "price-low-high", "price-high-low", "newest", "rating"].map(s => (
+            <div key={s} className="flex items-center space-x-2">
+              <RadioGroupItem value={s} id={`sort-${s}`} />
+              <Label htmlFor={`sort-${s}`}>{s.replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase())}</Label>
+            </div>
+          ))}
         </RadioGroup>
       </div>
 
       <Separator />
 
+      {/* Options */}
       <div className="space-y-2">
-        <h3 className="text-sm font-medium mb-1">Options</h3>
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="in-stock"
-            checked={filters.onlyInStock}
-            onCheckedChange={checked => onChange("onlyInStock", !!checked)}
-          />
-          <Label htmlFor="in-stock">In Stock Only</Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="on-sale"
-            checked={filters.onlySale}
-            onCheckedChange={checked => onChange("onlySale", !!checked)}
-          />
-          <Label htmlFor="on-sale">On Sale</Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="new-arrivals"
-            checked={filters.onlyNew}
-            onCheckedChange={checked => onChange("onlyNew", !!checked)}
-          />
-          <Label htmlFor="new-arrivals">New Arrivals</Label>
-        </div>
+        {["onlyInStock", "onlySale", "onlyNew"].map(key => (
+          <div key={key} className="flex items-center space-x-2">
+            <Checkbox id={key} checked={!!filters[key]} onCheckedChange={checked => onChange(key, !!checked)} />
+            <Label htmlFor={key}>
+              {key === "onlyInStock" ? "In Stock Only" : key === "onlySale" ? "On Sale" : "New Arrivals"}
+            </Label>
+          </div>
+        ))}
       </div>
 
       <Separator />
 
-      <Accordion type="multiple" defaultValue={["colors", "sizes"]}>
-        <AccordionItem value="colors">
-          <AccordionTrigger>Colors</AccordionTrigger>
-          <AccordionContent>
-            <div className="grid grid-cols-2 gap-2">
-              {allColors.map(color => (
-                <div key={color} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`color-${color.toLowerCase()}`}
-                    checked={filters.colors.includes(color)}
-                    onCheckedChange={() => handleColorToggle(color)}
-                  />
-                  <Label htmlFor={`color-${color.toLowerCase()}`}>{color}</Label>
-                </div>
-              ))}
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="sizes">
-          <AccordionTrigger>Sizes</AccordionTrigger>
-          <AccordionContent>
-            <div className="grid grid-cols-2 gap-2">
-              {allSizes.map(size => (
-                <div key={size} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`size-${size.toLowerCase().replace(" ", "-")}`}
-                    checked={filters.sizes.includes(size)}
-                    onCheckedChange={() => handleSizeToggle(size)}
-                  />
-                  <Label htmlFor={`size-${size.toLowerCase().replace(" ", "-")}`}>{size}</Label>
-                </div>
-              ))}
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-
-      </Accordion>
 
 
-      <Accordion type="multiple" defaultValue={Object.keys(filterAtrributes[0] || {})}>
-        {filterAtrributes != undefined && filterAtrributes.length > 0 && Object.entries(filterAtrributes[0]).map(([key, values]) => (
-          <AccordionItem value={key} key={key}>
+      {/* Dynamic Specifications */}
+      {filterAttributes && Object.entries(filterAttributes).map(([key, values]) => (
+        values.length > 0 && (<Accordion type="single" key={key}>
+          <AccordionItem value={key}>
             <AccordionTrigger className="capitalize">{key}</AccordionTrigger>
             <AccordionContent>
               <div className="grid grid-cols-2 gap-2">
-                {values.map((value) => {
+                {values.map(value => {
                   const id = `${key}-${value.toLowerCase().replace(/\s+/g, "-")}`;
-                  const isChecked = (filters[key] || []).includes(value)
-
-
+                  const checked = (filters[key] || []).includes(value);
                   return (
                     <div key={value} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={id}
-                        checked={isChecked}
-                        onCheckedChange={(checked) => handleFilterToggle(key, value, !!checked)}
-                      />
-
+                      <Checkbox id={id} checked={checked} onCheckedChange={() => toggleArrayFilter(key, value)} />
                       <Label htmlFor={id}>{value}</Label>
                     </div>
                   );
@@ -279,11 +150,8 @@ const ProductFilters = ({ filters, onChange, onClear, filterAtrributes }: Filter
               </div>
             </AccordionContent>
           </AccordionItem>
-        ))}
-      </Accordion>
-
+        </Accordion>
+        )))}
     </div>
   );
-};
-
-export default ProductFilters;
+}

@@ -85,8 +85,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   ]
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-40 border-b bg-background">
+    <div className="flex min-h-screen  flex-col">
+      <header className="sticky top-0 mx-4 z-40 border-b bg-background">
         <div className="container flex h-16 items-center justify-between py-4">
           <div className="flex items-center gap-2">
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -109,7 +109,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   {mainNav.map((item) => (
                     <Link
                       key={item.href}
-                      href={item.href}
+                      href={item.href as any}
                       onClick={() => setIsOpen(false)}
                       className={cn(
                         "flex items-center gap-2 px-2 py-1 text-lg font-medium rounded-md hover:bg-accent",
@@ -124,7 +124,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   {secondaryNav.map((item) => (
                     <Link
                       key={item.href}
-                      href={item.href}
+                      href={item.href as any}
                       onClick={() => setIsOpen(false)}
                       className={cn(
                         "flex items-center gap-2 px-2 py-1 text-lg font-medium rounded-md hover:bg-accent",
@@ -179,7 +179,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
-                  <Link href="/login" className="flex items-center w-full">
+                  <Link href="/auth/login" className="flex items-center w-full">
                     <Icons.logout className="mr-2 h-4 w-4" />
                     <span>Log out</span>
                   </Link>
@@ -195,7 +195,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             {mainNav.map((item) => (
               <Link
                 key={item.href}
-                href={item.href}
+                href={item.href as any}
                 className={cn(
                   "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md hover:bg-accent",
                   pathname === item.href && "bg-accent"
@@ -209,7 +209,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             {secondaryNav.map((item) => (
               <Link
                 key={item.href}
-                href={item.href}
+                href={item.href as any}
                 className={cn(
                   "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md hover:bg-accent",
                   pathname === item.href && "bg-accent"

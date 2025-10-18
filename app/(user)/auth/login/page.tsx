@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { ReadonlyURLSearchParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,9 +18,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { useLogin } from "@/lib/react-query/auth/queries";
+import { useSearchParams } from "next/navigation";
+import CaptchaWidget from "@/components/common/captcha/captcha-verification";
+import CaptchaV2Widget from "@/components/common/captcha/google-captcha-v2";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/store/auth";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -31,9 +35,14 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const { mutateAsync: login } = useLogin();
+  const { login: authLogin } = useAuth()
   const router = useRouter();
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
+
+
+  const searchParam = useSearchParams();
+  const redirect = searchParam.get("redirect");
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -46,25 +55,28 @@ export default function LoginPage() {
   async function onSubmit(data: LoginFormValues) {
     try {
       setIsLoading(true);
-      await login({
-        email: data.email,
-        password: data.password,
-      });
-      toast({
-        title: "Login Successful",
-        description: "You have successfully logged in.",
-        variant: "default",
-      });
 
-      router.push("/");
+      toast.promise(login({ email: data.email, password: data.password }), {
+        loading: "Logging in...",
+        success: (data) => {
+          authLogin(data.data);
+          router.push(redirect ?? "/" as any);
+          return "Login successful";
+        },
+        error: (err) => {
+          const msg = err instanceof Error ? err.message : 'Failed to login. Please try again.';
+          return msg
+        }
+      })
+
 
     } catch (error) {
       console.error("Login error:", error);
-
     } finally {
       setIsLoading(false);
     }
   }
+
 
 
 
@@ -114,7 +126,10 @@ export default function LoginPage() {
                 Forgot password?
               </Link>
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+
+            <CaptchaV2Widget onVerifiedChange={setIsCaptchaVerified} />
+
+            <Button type="submit" className="w-full" disabled={!isCaptchaVerified || isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

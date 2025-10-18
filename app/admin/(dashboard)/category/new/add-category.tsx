@@ -7,35 +7,27 @@ import {
     SelectContent,
     SelectGroup,
     SelectItem,
-    SelectLabel,
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAddCategory } from "@/lib/react-query/admin/queries";
 import { useFetchCategory } from "@/lib/react-query/public/category/queries";
-import { CategoryProps } from "@/lib/react-query/query.type";
 import { LoaderIcon, RefreshCcw } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
 import MultipleFileUploader from "@/components/ui/file-uploader";
 import { CategoryFormData } from "@/lib/validation/category";
 const AddCategoryFrom = () => {
-    const router = useRouter();
     const {
         mutateAsync: addCategory,
-        isSuccess,
-        data,
         isPending,
-        isError,
+
     } = useAddCategory();
 
     const {
         register,
         handleSubmit,
         formState: { errors },
-        reset,
-        setValue,
         control,
     } = useForm<CategoryFormData>({
         mode: "onBlur",
@@ -44,15 +36,11 @@ const AddCategoryFrom = () => {
 
     const {
         data: categories,
-        isLoading: categoryLoading,
-        isError: categoryError,
-        isSuccess: categorySuccess,
         refetch,
     } = useFetchCategory();
 
     const onSubmit = async (data: CategoryFormData) => {
         try {
-            console.log(data);
             await addCategory(data);
 
         } catch (error) {
@@ -147,7 +135,6 @@ const AddCategoryFrom = () => {
                                 control={control}
                                 errors={errors}
                                 label="Upload Images"
-                                isSubmitted={isSuccess}
                                 acceptedFileType={".jpg,.png"}
                             />
 

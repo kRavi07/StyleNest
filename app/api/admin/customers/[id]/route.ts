@@ -1,16 +1,20 @@
-import user from "@/lib/db/models/user";
+import User from "@/lib/db/models/user";
 import connectToDatabase from "@/lib/db/mongoose";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-type params = { params: { id: string } };
+type Params = {
+  params: Promise<{
+    id: string;
+  }>;
+};
 
-export async function GET(req: Request, { params }: params) {
+export async function GET(req: NextRequest, { params }: Params) {
   try {
     await connectToDatabase();
 
     const { id } = await params;
 
-    const customer = await user.findById(id);
+    const customer = await User.findById(id);
     if (!customer) {
       return NextResponse.json(
         { error: "Customer not found" },
@@ -26,14 +30,12 @@ export async function GET(req: Request, { params }: params) {
   }
 }
 
-export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(req: Request, { params }: Params) {
   try {
     await connectToDatabase();
     const data = await req.json();
-    const customer = await user.findByIdAndUpdate(params.id, data, {
+    const { id } = await params;
+    const customer = await User.findByIdAndUpdate(id, data, {
       new: true,
     });
     if (!customer) {
@@ -51,13 +53,11 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(req: Request, { params }: Params) {
   try {
     await connectToDatabase();
-    const customer = await user.findByIdAndDelete(params.id);
+    const { id } = await params;
+    const customer = await User.findByIdAndDelete(id);
     if (!customer) {
       return NextResponse.json(
         { error: "Customer not found" },

@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import * as React from "react";
 import { Check, ChevronDown } from "lucide-react";
 
@@ -60,8 +61,8 @@ export function FontFamilySelect({
           <span className="truncate">
             {value
               ? FONT_FAMILY_GROUPS.flatMap((group) => group.options).find(
-                  (option) => option.value === value
-                )?.label
+                (option) => option.value === value
+              )?.label
               : "Select font"}
           </span>
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

@@ -1,5 +1,4 @@
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
+import { useEditor } from "@tiptap/react";
 import { useEffect } from "react";
 import { ControllerRenderProps } from "react-hook-form";
 import DocumentEditor from "../text-editor/text-editor";
@@ -26,11 +25,12 @@ export const RichTextEditorField = ({ field, }: TiptapFieldProps) => {
         if (editor && field.value !== editor.getHTML()) {
             editor.commands.setContent(field.value || "");
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [field.value]);
 
     if (!editor) return <></>;
 
     return (
-        <DocumentEditor editorHeight="300px" editor={editor} />
+        <DocumentEditor editor={editor} />
     );
 };

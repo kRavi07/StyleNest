@@ -1,3 +1,5 @@
+import { PaginationParams } from "../utils/pagination";
+
 export interface UserRegistrationRequest {
   name: string;
   email: string;
@@ -328,4 +330,8 @@ export interface CreateContentItemProps {
   description?: string;
   type: string;
   content: any;
+}
+
+export interface CustomerOrdersParams extends PaginationParams {
+  id: string;
 }

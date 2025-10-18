@@ -9,8 +9,6 @@ import {
 } from "@radix-ui/react-icons";
 
 import {
-  ImageIcon,
-  FileUpIcon,
   Strikethrough,
   Code,
   ListOrdered,
@@ -18,11 +16,6 @@ import {
   AlignCenterIcon,
   LucideAlignRight,
   Quote,
-  TableIcon,
-  Undo,
-  Redo,
-  YoutubeIcon,
-  LinkIcon,
 } from "lucide-react";
 
 export const TOOLBAR_ITEMS = [

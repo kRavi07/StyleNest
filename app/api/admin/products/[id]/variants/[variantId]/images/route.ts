@@ -1,19 +1,16 @@
 import Product from "@/lib/db/models/product";
 import connectToDatabase from "@/lib/db/mongoose";
-import {
-  isFileExist,
-  processFileUpload,
-  uploadFileAndSaveMetadata,
-} from "@/lib/services/file-services";
-import { hashFile } from "@/lib/utils";
+import { processFileUpload } from "@/lib/services/file-services";
 import { NextRequest, NextResponse } from "next/server";
 
-type Params = Promise<{
-  params: { id: string; variantId: string };
-}>;
-
-export async function POST(req: NextRequest, params: Params) {
-  const param = (await params).params;
+type Params = {
+  params: Promise<{
+    id: string;
+    variantId: string;
+  }>;
+};
+export async function POST(req: NextRequest, { params }: Params) {
+  const param = await params;
   if (!param || !param.id || !param.variantId) {
     return NextResponse.json(
       { error: "Product ID and variant ID are required" },
@@ -33,9 +30,6 @@ export async function POST(req: NextRequest, params: Params) {
     );
   }
 
-  // Generate hash and check for deduplication
-  const hash = await hashFile(file);
-  const existingFile = await isFileExist(hash);
   let s3Key: string;
 
   s3Key = await processFileUpload(file, "products");
@@ -70,8 +64,8 @@ export async function POST(req: NextRequest, params: Params) {
   return NextResponse.json({ success: true, variant: updatedVariant });
 }
 
-export async function DELETE(req: NextRequest, params: Params) {
-  const param = (await params).params;
+export async function DELETE(req: NextRequest, { params }: Params) {
+  const param = await params;
   if (!param || !param.id || !param.variantId) {
     return NextResponse.json(
       { error: "Product ID and variant ID are required" },
@@ -94,14 +88,18 @@ export async function DELETE(req: NextRequest, params: Params) {
     return NextResponse.json({ error: "Product not found" }, { status: 404 });
   }
 
-  const variant = product.variants.id(variantId);
+  const variant = product.variants.find(
+    (variant: any) => variant._id.toString() === variantId
+  );
 
   if (!variant) {
     return NextResponse.json({ error: "Variant not found" }, { status: 404 });
   }
 
   const originalLength = variant.images.length;
-  variant.images = variant.images.filter((key: string) => key !== s3Key);
+  variant.images = variant.images.filter(
+    (key: string | File) => typeof key === "string" && key !== s3Key
+  );
 
   if (variant.images.length === originalLength) {
     return NextResponse.json(

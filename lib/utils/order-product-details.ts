@@ -11,7 +11,7 @@ export interface ResolvedOrderItem {
   sku: string;
   price: number;
   quantity: number;
-  image?: string;
+  image?: string | File;
   variantInfo?: Record<string, string>;
 }
 
@@ -20,14 +20,14 @@ export const resolveOrderItemsFromProduct = async (
 ): Promise<ResolvedOrderItem[]> => {
   return await Promise.all(
     items.map(async (item) => {
-      const product = await Product.findById(item.productId);
+      const product = (await Product.findById(item.productId)) as any;
       if (!product) {
         throw new Error(`Product not found: ${item.productId}`);
       }
 
       let variant = undefined;
       if (item.sku && product.variants?.length) {
-        variant = product.variants.find((v) => v.sku === item.sku);
+        variant = product.variants.find((v: any) => v.sku === item.sku);
       }
 
       return {
@@ -38,10 +38,13 @@ export const resolveOrderItemsFromProduct = async (
         quantity: item.quantity,
         image: (variant?.images ?? product.images)[0] ?? "",
         variantInfo:
-          variant?.optionValues?.reduce((acc, cur) => {
-            acc[cur.name] = cur.value;
-            return acc;
-          }, {} as Record<string, string>) ?? {},
+          variant?.optionValues?.reduce(
+            (acc: any, cur: any) => {
+              acc[cur.name] = cur.value;
+              return acc;
+            },
+            {} as Record<string, string>
+          ) ?? {},
       };
     })
   );

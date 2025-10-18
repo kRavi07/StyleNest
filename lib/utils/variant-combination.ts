@@ -27,10 +27,13 @@ export function generateCombinations(
     price: 0,
     stock: 0,
     optionValues,
-    attributes: optionValues.reduce((acc, curr) => {
-      acc[curr.name] = curr.value;
-      return acc;
-    }, {} as Record<string, string>),
+    attributes: optionValues.reduce(
+      (acc, curr) => {
+        acc[curr.name] = curr.value;
+        return acc;
+      },
+      {} as Record<string, string>
+    ),
   }));
 }
 
@@ -68,28 +71,11 @@ export function getOptionMap(variants: Variant[]) {
   return optionMap;
 }
 
-export function getValidOptions(optionTypes, variants, selectedOptions) {
-  const result = {};
-  for (const type of optionTypes) {
-    const validValues = new Set();
-
-    for (const variant of variants) {
-      const matches = Object.entries(selectedOptions).every(([k, v]) => {
-        return k === type || variant.optionValues[k] === v;
-      });
-
-      if (matches) validValues.add(variant.optionValues[type]);
-    }
-
-    result[type] = [...validValues];
-  }
-  return result;
-}
-
 export function buildAttributesFromOptionTypes(
   optionTypes: { name: string; values: string[] }[],
   variants: { optionValues: Record<string, string>; stock?: number }[]
 ) {
+  if (!optionTypes || optionTypes.length === 0) return [];
   return optionTypes.map(({ name, values }) => {
     const valueMap = new Map<string, number>();
 
@@ -119,9 +105,6 @@ export function buildAttributesFromOptionTypes(
   });
 }
 
-// Optional: color mapping for swatches
-
-// Optional: Add basic color mapping (can expand)
 function getColorHex(value: string): string | undefined {
   const lower = value.toLowerCase();
   const colorMap: Record<string, string> = {
@@ -135,3 +118,31 @@ function getColorHex(value: string): string | undefined {
   };
   return colorMap[lower];
 }
+
+/**
+ * Finds a specific variant from an array of variants based on user selections.
+ * @param variants - An array of all possible product variants.
+ * @param selections - An object representing the user's selected options (e.g., { Color: 'Red', Size: 'M' }).
+ * @returns The matching IVariant object, or undefined if no match is found.
+ */
+export const getVariantFromSelections = (
+  variants: Variant[],
+  selections: Record<string, string>
+): Variant | undefined => {
+  // Find the variant where every selection matches the variant's optionValues.
+  return variants.find((variant) => {
+    const { optionValues } = variant;
+
+    // Check if the number of selected options matches the variant's options.
+    // This is a quick check to filter out non-matches.
+    if (Object.keys(selections).length !== Object.keys(optionValues).length) {
+      return false;
+    }
+
+    // Use .every() to ensure all key-value pairs in 'selections'
+    // exist and match in the variant's 'optionValues'.
+    return Object.entries(selections).every(
+      ([key, value]) => optionValues[key] === value
+    );
+  });
+};

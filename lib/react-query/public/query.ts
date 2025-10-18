@@ -1,60 +1,95 @@
 import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
-
 import { toast } from "sonner";
 import {
   createTicket,
-  fetchProducts,
   fetchSearchSuggestions,
   getAllAttributeType,
-  getBlogsBySlug,
-  getContentWithKey,
   getFeaturedProducts,
   getFeeds,
+  getFilters,
   getProduct,
   getProductReviews,
-  getPublishedBlogs,
   getSingleCategory,
   postRequirement,
   searchProduct,
 } from "./api";
+import axios from "axios";
 
-export const useFetchProducts = (
-  name?: string,
-  category?: string,
-  productname?: string
-) => {
-  return useQuery({
-    queryKey: ["fetachProducts"],
-    queryFn: () => fetchProducts({ name, category, productname }),
-  });
-};
+export interface ProductQueryParams {
+  filters: Record<string, any>;
+  limit?: number;
+}
 
-//infinite query
-export const useFetchProductsInfinite = (
-  name?: string,
-  category?: string,
-  productname?: string,
-  limit = 20 // Default limit to 20
-) => {
-  return useInfiniteQuery({
-    queryKey: ["fetchProductsInfinite", name, category, productname],
-    queryFn: ({ pageParam = 1 }) =>
-      fetchProducts({
-        category,
-        name,
-        limit,
-        page: pageParam,
-      }),
+export interface ProductsResponse {
+  data: any[];
+  total: number;
+  totalPages: number;
+  currentPage: number;
+  hasMore: boolean;
+  nextPage: number | null;
+  filters?: Record<string, any>;
+}
+
+export function useFetchProductsInfinite({
+  filters,
+  limit = 20,
+}: ProductQueryParams) {
+  return useInfiniteQuery<ProductsResponse>({
+    queryKey: ["products", filters],
+    queryFn: async ({ pageParam = 1 }) => {
+      const params = new URLSearchParams();
+
+      // Pagination
+      params.append("page", String(pageParam));
+      params.append("limit", String(limit));
+
+      // Add dynamic filters
+      Object.entries(filters).forEach(([key, value]) => {
+        if (Array.isArray(value) && value.length > 0) {
+          params.append(key, value.join(","));
+        } else if (
+          value !== undefined &&
+          value !== null &&
+          value !== "" &&
+          value !== false
+        ) {
+          params.append(key, String(value));
+        }
+      });
+
+      const { data } = await axios.get<ProductsResponse>(
+        `/api/products?${params.toString()}`
+      );
+
+      return data;
+    },
     getNextPageParam: (lastPage) => {
-      if (lastPage.hasMore) {
-        return lastPage.nextPage;
-      } else {
-        return undefined;
-      }
+      // Use backend-provided nextPage if available
+      return lastPage.hasMore ? lastPage.nextPage : undefined;
     },
     initialPageParam: 1,
+    staleTime: 60 * 1000 * 10,
+  });
+}
+
+export const useGetFilters = () => {
+  return useQuery({
+    queryKey: ["products-filter"],
+    queryFn: () => getFilters(),
+
+    staleTime: 1000 * 60 * 10 * 24,
   });
 };
+
+export const useGetFeaturedProducts = () => {
+  return useQuery({
+    queryKey: ["getFeaturedProducts"],
+    queryFn: () => getFeaturedProducts(),
+    staleTime: 60 * 1000 * 10,
+    retry: 1,
+  });
+};
+
 export const useGetProduct = (id: string) => {
   return useQuery({
     queryKey: ["getProduct", id],
@@ -78,7 +113,7 @@ export const usePostRequirement = () => {
   });
 };
 
-export const searchProducts = (query: string) => {
+export const useSearchProducts = (query: string) => {
   return useQuery({
     queryKey: ["searchProduct", query],
     queryFn: () => searchProduct(query),
@@ -86,7 +121,7 @@ export const searchProducts = (query: string) => {
   });
 };
 
-export const getSearchSuggestions = (query: string) => {
+export const useGetSearchSuggestions = (query: string) => {
   return useQuery({
     queryKey: ["searchSuggestions", query],
     queryFn: () => fetchSearchSuggestions(query),
@@ -147,38 +182,5 @@ export const useCreateTicket = () => {
     onError: (error) => {
       toast.error(error?.message);
     },
-  });
-};
-
-export const useGetFeaturedProducts = () => {
-  return useQuery({
-    queryKey: ["getFeaturedProducts"],
-    queryFn: () => getFeaturedProducts(),
-    staleTime: 60 * 1000 * 10,
-    retry: 1,
-  });
-};
-
-export const useGetBlogBySlug = (slug: string) => {
-  return useQuery({
-    queryKey: ["getBlogsBySlug", slug],
-    queryFn: () => getBlogsBySlug(slug),
-    staleTime: 60 * 10 * 1000,
-  });
-};
-
-export const useGetContentWithKey = (contentKey: string) => {
-  return useQuery({
-    queryKey: ["getContentWithKey", contentKey],
-    queryFn: () => getContentWithKey(contentKey),
-
-    staleTime: 60 * 1000 * 20,
-  });
-};
-export const useGetPublishedBlogs = () => {
-  return useQuery({
-    queryKey: ["getPublished"],
-    queryFn: getPublishedBlogs,
-    staleTime: 60 * 10 * 1000,
   });
 };

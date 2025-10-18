@@ -1,10 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bold, Italic, Underline, Type, Palette, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 import { Editor } from '@tiptap/core';
-import { offset } from '@floating-ui/dom'
-import { BubbleMenu } from '@tiptap/react/menus';
-
-const EditorBubbleMenu = ({ editor, isVisible = true, position = { x: 0, y: 0 } }: {
+import { BubbleMenu } from '@tiptap/react/dist/menus/index.cjs'
+const EditorBubbleMenu = ({ editor, isVisible = true }: {
     editor: Editor,
     isVisible?: boolean,
     position?: { x: number, y: number }
@@ -14,7 +12,7 @@ const EditorBubbleMenu = ({ editor, isVisible = true, position = { x: 0, y: 0 } 
     const [selectedColor, setSelectedColor] = useState('#000000');
     const [selectedFontSize, setSelectedFontSize] = useState('16');
 
-    const menuRef = useRef(null);
+    const menuRef = useRef<HTMLDivElement | null>(null);
 
     const colors = [
         '#000000', '#FF0000', '#00FF00', '#0000FF', '#FFFF00',
@@ -25,8 +23,9 @@ const EditorBubbleMenu = ({ editor, isVisible = true, position = { x: 0, y: 0 } 
     const fontSizes = ['12', '14', '16', '18', '20', '24', '28', '32', '36', '42', '48'];
 
     useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (menuRef.current && !menuRef.current.contains(event.target)) {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as Node | null;
+            if (menuRef.current && target && !menuRef.current.contains(target)) {
                 setShowColorPicker(false);
                 setShowFontSize(false);
             }
@@ -48,7 +47,7 @@ const EditorBubbleMenu = ({ editor, isVisible = true, position = { x: 0, y: 0 } 
         editor.chain().focus().toggleUnderline().run();
     };
 
-    const handleColorChange = (color) => {
+    const handleColorChange = (color: string) => {
         setSelectedColor(color);
         editor.chain().focus().setColor(color).run();
         setShowColorPicker(false);
@@ -60,7 +59,7 @@ const EditorBubbleMenu = ({ editor, isVisible = true, position = { x: 0, y: 0 } 
         setShowFontSize(false);
     };
 
-    const handleAlign = (alignment) => {
+    const handleAlign = (alignment: string) => {
         editor.chain().focus().setTextAlign(alignment).run();
     };
 
@@ -69,7 +68,7 @@ const EditorBubbleMenu = ({ editor, isVisible = true, position = { x: 0, y: 0 } 
     return (
 
         <BubbleMenu
-            shouldShow={({ editor }) => {
+            shouldShow={({ editor }: { editor: Editor }) => {
                 return editor &&
                     editor.state &&
                     editor.state.selection &&

@@ -3,12 +3,14 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import ReactQueryClientProviders from "@/components/providers/query-client-provider";
+import { Toaster } from "sonner";
+import GoogleCaptchaProviderClient from "@/lib/provider/google-captcha";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "StyleNest | Premium Clothing Store",
-  description: "Discover the latest fashion trends and premium clothing at StyleNest. Shop now for exclusive styles and quality apparel.",
+  title: "Drimcot | Premium Clothing Store",
+  description: "Discover the latest fashion trends and premium clothing at Drimcot. Shop now for exclusive styles and quality apparel.",
 };
 
 export default function RootLayout({
@@ -19,17 +21,20 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-        >
-          <ReactQueryClientProviders>
-            {
-              children
-            }
-          </ReactQueryClientProviders>
-        </ThemeProvider>
+        <GoogleCaptchaProviderClient>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            enableSystem
+          >
+            <ReactQueryClientProviders>
+              {
+                children
+              }
+            </ReactQueryClientProviders>
+            <Toaster position="top-right" richColors />
+          </ThemeProvider>
+        </GoogleCaptchaProviderClient>
       </body>
     </html>
   );

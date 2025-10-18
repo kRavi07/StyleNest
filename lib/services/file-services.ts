@@ -1,6 +1,7 @@
 import { FileInfo } from "@/lib/db/models/FileInfo";
 import { uploadToS3 } from "./s3-services";
 import { hashFile } from "../utils";
+import path from "path";
 
 export const isFileExist = async (hash: string) => {
   const existingFile = await FileInfo.findOne({ hash });
@@ -30,13 +31,19 @@ export const uploadFileAndSaveMetadata = async ({
   key: string;
   hash: string;
 }) => {
-  // Upload to S3
-  const url = await uploadToS3({ buffer, originalFilename, mimetype, key });
+  const extension = path.extname(originalFilename);
 
-  // Save to DB
+  const s3Key = `${key}${extension}`;
+
+  const url = await uploadToS3({
+    buffer,
+    mimetype,
+    key: s3Key,
+  });
+
   await FileInfo.create({
     hash,
-    s3Key: key,
+    s3Key,
     originalFilename,
     mimetype,
     size: buffer.length,

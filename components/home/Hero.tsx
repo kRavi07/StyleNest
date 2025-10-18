@@ -10,10 +10,10 @@ const heroSlides = [
   {
     id: 1,
     imageUrl: "https://images.pexels.com/photos/5709661/pexels-photo-5709661.jpeg?auto=compress&cs=tinysrgb&w=1800",
-    title: "Summer Collection 2025",
-    subtitle: "Discover the latest trends in summer fashion",
+    title: "Collection 2025",
+    subtitle: "Discover the latest trends 2025",
     cta: "Shop Collection",
-    ctaLink: "/products?collection=summer",
+    ctaLink: "/products",
     position: "center"
   },
   {
@@ -21,8 +21,6 @@ const heroSlides = [
     imageUrl: "https://images.pexels.com/photos/5384423/pexels-photo-5384423.jpeg?auto=compress&cs=tinysrgb&w=1800",
     title: "Premium Essentials",
     subtitle: "Timeless pieces crafted with quality materials",
-    cta: "Explore Now",
-    ctaLink: "/products?category=essentials",
     position: "left"
   },
   {
@@ -30,8 +28,6 @@ const heroSlides = [
     imageUrl: "https://images.pexels.com/photos/6774442/pexels-photo-6774442.jpeg?auto=compress&cs=tinysrgb&w=1800",
     title: "Sustainable Fashion",
     subtitle: "Eco-friendly clothing for a better tomorrow",
-    cta: "Learn More",
-    ctaLink: "/sustainability",
     position: "right"
   }
 ];
@@ -84,12 +80,16 @@ const Hero = () => {
           <p className="text-lg md:text-xl mb-8 opacity-90">
             {slide.subtitle}
           </p>
-          <Button size="lg" className="bg-gold hover:bg-gold-accent" asChild>
-            <Link href={slide.ctaLink}>
-              {slide.cta}
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
+          {
+            slide.ctaLink && (
+              <Button size="lg" className="bg-gold hover:bg-gold-accent" asChild>
+                <Link href={slide.ctaLink as any}>
+                  {slide.cta}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            )
+          }
         </div>
       </div>
 

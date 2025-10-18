@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { Editor, Extension } from "@tiptap/core";
 import { ReactNode } from "react";
 

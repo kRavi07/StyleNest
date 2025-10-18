@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Product } from "@/types";
-import { CartContext, CartContextType, CartItem } from "@/hooks/context/cart/cart-context";
+import { CartContext, CartItem } from "@/hooks/context/cart/cart-context";
 import { CartItemsCountContext } from "@/hooks/context/cart/cart-item-context";
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
@@ -111,13 +111,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     });
   };
 
-  const contextValue: CartContextType = {
-    cart,
-    addItem,
-    removeItem,
-    updateQuantity,
-    clearCart,
-  };
+
 
   return (
     <CartContext.Provider value={{ cart, addItem, removeItem, updateQuantity, clearCart }}>

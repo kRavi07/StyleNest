@@ -1,19 +1,4 @@
-"use client";
-
-import {
-    ColumnDef,
-    flexRender,
-    SortingState,
-    getCoreRowModel,
-    useReactTable,
-    getSortedRowModel,
-    getPaginationRowModel,
-    ColumnFiltersState,
-    getFilteredRowModel,
-    VisibilityState,
-    PaginationState,
-} from "@tanstack/react-table";
-
+import { flexRender } from "@tanstack/react-table";
 import {
     Table,
     TableBody,
@@ -22,89 +7,88 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { useEffect, useState } from "react";
-import { Input } from "../input";
-import { DataTableViewOptions } from "./DataTableViewOption";
-import { DataTablePagination } from "./DataTablePagination";
-import { DataTableFacetedFilter } from "./DataTableFacetedFilter";
-
-interface DataTableProps<TData, TValue> {
-    columns: ColumnDef<TData, TValue>[];
-    data: TData[];
-    filterColumn?: string;
-    pageIndex: number;
-    pageSize: number;
-    onPageChange: (newPage: number) => void;
-    onPageSizeChange: (newPageSize: number) => void;
-}
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { DataTablePagination } from "./data-table-pagination";
+import { DataTableToolbar } from "./data-table-toolbar";
+import { useDataTable } from "@/hooks/use-data-table";
+import { DataTableProps } from "@/types/data-table";
 
 export function DataTable<TData, TValue>({
     columns,
     data,
-    filterColumn,
-    pageIndex,
-    pageSize,
+    config,
+    facetedFilters,
+    bulkActions,
+    onRefresh,
+    onExport,
+    isLoading = false,
+    error,
+    pageIndex = 0,
+    pageSize = 10,
+    totalRows,
     onPageChange,
     onPageSizeChange,
+    searchColumn
 }: DataTableProps<TData, TValue>) {
-    const [sorting, setSorting] = useState<SortingState>([]);
-    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-
-    const table = useReactTable({
+    const {
+        table,
+        config: resolvedConfig,
+        globalFilter,
+        setGlobalFilter,
+        debouncedGlobalFilter,
+        density,
+        selectedRows,
+        resetFilters,
+        isFiltered,
+        isLoading: isSearching,
+    } = useDataTable({
         data,
         columns,
-        getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        onSortingChange: setSorting,
-        getSortedRowModel: getSortedRowModel(),
-        onColumnFiltersChange: setColumnFilters,
-        getFilteredRowModel: getFilteredRowModel(),
-        onColumnVisibilityChange: setColumnVisibility,
-        onPaginationChange: (updater) => {
-            const newPageIndex =
-                typeof updater === "function"
-                    ? updater(table.getState().pagination).pageIndex
-                    : updater.pageIndex;
-            onPageChange(newPageIndex);
-        },
-        manualPagination: true,
-        state: {
-            sorting,
-            columnFilters,
-            columnVisibility,
-            pagination: {
-                pageIndex,
-                pageSize,
-            },
-        },
+        config,
+        pageIndex,
+        pageSize,
+        totalRows,
+        onPageChange,
+        onPageSizeChange,
     });
 
-    useEffect(() => {
-        table.setPageSize(pageSize);
-    }, [pageSize, table]);
+
+
+
+    if (error) {
+        return (
+            <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+            </Alert>
+        );
+    }
 
     return (
-        <div className="flex flex-col w-full">
-            <div className="flex items-center justify-between py-4">
-                {filterColumn && (
-                    <Input
-                        placeholder={`Search...`}
-                        value={
-                            (table.getColumn(filterColumn)?.getFilterValue() as string) ?? ""
-                        }
-                        onChange={(event) =>
-                            table.getColumn(filterColumn)?.setFilterValue(event.target.value)
-                        }
-                        className="max-w-sm"
-                    />
-                )}
+        <div className="space-y-4">
+            {/* Toolbar */}
+            <DataTableToolbar
+                table={table}
+                globalFilter={globalFilter}
+                setGlobalFilter={setGlobalFilter}
+                debouncedGlobalFilter={debouncedGlobalFilter}
+                config={resolvedConfig}
+                facetedFilters={facetedFilters}
+                bulkActions={bulkActions}
+                selectedRows={selectedRows}
+                onRefresh={onRefresh}
+                onExport={onExport}
+                isLoading={isLoading || isSearching}
+                isFiltered={isFiltered}
+                resetFilters={resetFilters}
+                searchableColumns={searchColumn}
+            />
 
-                <DataTableViewOptions table={table} />
-            </div>
-            <div className="rounded-md border flex w-full">
+            {/* Table */}
+            <div className="rounded-md border">
                 <Table>
-                    <TableHeader>
+                    <TableHeader className="bg-muted sticky top-0 z-10">
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
                                 {headerGroup.headers.map((header) => (
@@ -121,19 +105,22 @@ export function DataTable<TData, TValue>({
                         ))}
                     </TableHeader>
                     <TableBody>
-                        {table.getRowModel().rows?.length ? (
+                        {isLoading ? null : table.getRowModel().rows?.length ? (
                             table.getRowModel().rows.map((row) => (
                                 <TableRow
                                     key={row.id}
                                     data-state={row.getIsSelected() && "selected"}
-                                    className="hover:bg-slate-200 dark:hover:bg-slate-800"
+                                    className={`
+                    hover:bg-muted/50 transition-colors
+                    ${density === 'compact' ? 'h-8' : density === 'spacious' ? 'h-16' : 'h-12'}
+                  `}
                                 >
                                     {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>
-                                            {flexRender(
-                                                cell.column.columnDef.cell,
-                                                cell.getContext()
-                                            )}
+                                        <TableCell
+                                            key={cell.id}
+                                            className={density === 'compact' ? 'py-1' : density === 'spacious' ? 'py-4' : 'py-2'}
+                                        >
+                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                         </TableCell>
                                     ))}
                                 </TableRow>
@@ -144,17 +131,20 @@ export function DataTable<TData, TValue>({
                                     colSpan={columns.length}
                                     className="h-24 text-center"
                                 >
-                                    No results.
+                                    {isFiltered ? "No results match your search." : "No data available."}
                                 </TableCell>
                             </TableRow>
                         )}
                     </TableBody>
                 </Table>
             </div>
+
+            {/* Pagination */}
             <DataTablePagination
                 table={table}
                 onPageChange={onPageChange}
                 onPageSizeChange={onPageSizeChange}
+                pageSizeOptions={resolvedConfig.pageSizeOptions}
             />
         </div>
     );

@@ -3,17 +3,18 @@ import connectToDatabase from "@/lib/db/mongoose";
 import { NextResponse } from "next/server";
 
 type Params = {
-  id: string;
+  params: Promise<{
+    id: string;
+  }>;
 };
-
-export async function GET(_: Request, { params }: { params: Params }) {
+export async function GET(_: Request, { params }: Params) {
   const p = await params;
   await connectToDatabase();
   const attribute = await VariantAttribute.findById(p.id);
   return NextResponse.json(attribute);
 }
 
-export async function PATCH(req: Request, { params }: { params: Params }) {
+export async function PATCH(req: Request, { params }: Params) {
   const p = await params;
   await connectToDatabase;
   const body = await req.json();
@@ -23,7 +24,7 @@ export async function PATCH(req: Request, { params }: { params: Params }) {
   return NextResponse.json(updated);
 }
 
-export async function DELETE(_: Request, { params }: { params: Params }) {
+export async function DELETE(_: Request, { params }: Params) {
   const p = await params;
   await connectToDatabase();
 

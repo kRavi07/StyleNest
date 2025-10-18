@@ -2,25 +2,20 @@ import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/db/mongoose";
 import User from "@/lib/db/models/user";
 import bcrypt from "bcryptjs";
-import { resetPasswordSchema } from "@/lib/validation/auth";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const parsed = resetPasswordSchema.safeParse(body);
+    const { token, password } = await req.json();
 
-    if (!parsed.success) {
+    if (!token || !password) {
       return NextResponse.json(
-        { success: false, error: parsed.error.format() },
+        { success: false, error: "Token and password are required" },
         { status: 400 }
       );
     }
 
-    const { token, password } = parsed.data;
-
     await connectToDatabase();
 
-    // Find user with valid reset token that hasn't expired
     const user = await User.findOne({
       resetPasswordToken: token,
       resetPasswordExpires: { $gt: Date.now() },

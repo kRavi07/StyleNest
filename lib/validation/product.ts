@@ -1,13 +1,5 @@
 import { z } from "zod";
 
-// 🔹 OptionType schema
-const optionTypeSchema = z.object({
-  name: z.string().min(1, { message: "Option name is required" }),
-  values: z
-    .array(z.string().min(1, { message: "Option value cannot be empty" }))
-    .min(1),
-});
-
 // 🔹 Attribute schema (used for specifications and variant attributes)
 const attributeSchema = z.object({
   name: z.string(),
@@ -22,7 +14,7 @@ const seoSchema = z.object({
 });
 
 // 🔹 Variant schema
-const variantSchema = z.object({
+export const variantSchema = z.object({
   name: z.string().min(1, { message: "Variant name is required" }),
   sku: z.string().min(1, { message: "SKU is required" }),
   price: z.number().nonnegative({ message: "Price cannot be negative" }),
@@ -30,7 +22,8 @@ const variantSchema = z.object({
   stock: z
     .number()
     .int()
-    .nonnegative({ message: "Stock must be a non-negative integer" }),
+    .nonnegative({ message: "Stock must be a non-negative integer" })
+    .optional(),
   images: z
     .array(z.union([z.string().url(), z.instanceof(File)]))
     .optional()
@@ -100,9 +93,11 @@ export const CreateProductSchema = z.preprocess((input) => {
 }, BaseProductSchema);
 
 // 🔹 Partial schemas for update
-export const UpdateProductSchema = BaseProductSchema.partial();
+export const UpdateProductSchema = BaseProductSchema.deepPartial();
+
 export const UpdateVariantSchema = variantSchema.partial();
 
 // 🔹 Types
 export type CreateProductFormData = z.infer<typeof CreateProductSchema>;
+export type UpdateProductFormData = z.infer<typeof UpdateProductSchema>;
 export type VariantFormData = z.infer<typeof variantSchema>;

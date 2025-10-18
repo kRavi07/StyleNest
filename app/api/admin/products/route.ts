@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import Product from "@/lib/db/models/product";
-import Category from "@/lib/db/models/category";
 import connectToDatabase from "@/lib/db/mongoose";
-import { CreateProductSchema } from "@/lib/validation/product";
-import { parseFormData } from "@/lib/services/form-parser";
-import { isAdmin } from "@/lib/auth";
-import { processFileUpload } from "@/lib/services/file-services";
 import { handleProductUpload } from "./product.service";
+import { requireAuthAdmin } from "@/lib/auth/server-auth";
+import { formatProducts } from "../../products/products.service";
 
 export async function GET(req: NextRequest) {
   try {
@@ -46,10 +43,14 @@ export async function GET(req: NextRequest) {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
+        .select(
+          "-description -variants -optionTypes -specifications -variants -attributes -seo -archivedAt -hasVariants -createdAt -updatedAt -__v"
+        )
         .populate({
           path: "category",
           select: "_id name",
-        }),
+        })
+        .lean(),
       Product.countDocuments(query),
     ]);
 
@@ -58,8 +59,10 @@ export async function GET(req: NextRequest) {
     const hasMore = page < totalPages;
     const nextPage = hasMore ? page + 1 : null;
 
+    const formattedProduct = formatProducts(products);
+
     return NextResponse.json({
-      data: products,
+      data: formattedProduct,
       total,
       totalPages,
       currentPage: page,
@@ -77,13 +80,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    console.log("POST /api/admin/products");
-
-    const authResult = await isAdmin(req);
-    if (!authResult.success) {
+    const authResult = await requireAuthAdmin();
+    if (!authResult) {
       return NextResponse.json(
-        { success: false, error: authResult.error },
-        { status: authResult.status }
+        { success: false, error: authResult },
+        { status: 401 }
       );
     }
 

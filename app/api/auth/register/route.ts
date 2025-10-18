@@ -1,102 +1,65 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import connectToDatabase from "@/lib/db/mongoose";
 import User from "@/lib/db/models/user";
-import { z } from "zod";
-
-const UserRegsitrationSchema = z.object({
-  email: z.string().email({ message: "Invalid email" }),
-  password: z
-    .string()
-    .min(8, { message: "Password must be at least 8 characters long" }),
-  name: z.string().min(1, { message: "Name is required" }),
-  role: z.enum(["user", "admin"]).default("user"),
-});
+import {
+  signAccessToken,
+  signRefreshToken,
+  persistRefreshToken,
+  setAuthCookies,
+} from "@/lib/auth/auth";
 
 export async function POST(req: Request) {
   try {
-    if (!req) {
+    const { email, password, name, mobileno } = await req.json();
+
+    if (!email || !password || !mobileno) {
       return NextResponse.json(
-        { success: false, error: "Request  is missing" },
+        { message: "Email and password required" },
         { status: 400 }
       );
     }
 
-    const body = await req.json();
-
-    const parsedBody = UserRegsitrationSchema.safeParse(body);
-    if (!parsedBody.success) {
+    const existingUser = await User.findOne({ email }).select("+password");
+    if (existingUser) {
       return NextResponse.json(
-        {
-          message: "Validation failed",
-          errors: parsedBody.error.issues.map((issue) => ({
-            message: issue.message,
-          })),
-        },
-        {
-          status: 400,
-        }
+        { message: "User already exists" },
+        { status: 409 }
       );
     }
 
-    const { name, email, password } = parsedBody.data;
+    const user = new User({ email, name, mobileno });
+    await user.setPassword(password);
+    await user.save();
 
-    if (!name || !email || !password) {
-      return NextResponse.json(
-        { success: false, error: "Name, email and password are required" },
-        { status: 400 }
-      );
-    }
+    const payload = {
+      sub: String(user._id),
+      email: user.email,
+      role: user.role,
+    };
 
-    // Connect to the database
-    await connectToDatabase();
+    const [accessToken, refreshToken] = await Promise.all([
+      signAccessToken(payload),
+      signRefreshToken(payload),
+    ]);
 
-    // Check if user already exists
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return NextResponse.json(
-        { success: false, error: "User already exists" },
-        { status: 400 }
-      );
-    }
+    const ua = req.headers.get("user-agent") || undefined;
+    const ip =
+      (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() ||
+      (req as any).ip ||
+      undefined;
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create new user
-    const user = await User.create({
-      name,
-      email,
-      password: hashedPassword,
+    await persistRefreshToken(String(user._id), refreshToken, {
+      userAgent: ua,
+      ip,
     });
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || "your-secret-key",
-      { expiresIn: "7d" }
-    );
-
-    return NextResponse.json(
-      {
-        success: true,
-        data: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          token,
-        },
-      },
+    const res = NextResponse.json(
+      { message: "Registered successfully" },
       { status: 201 }
     );
-  } catch (error) {
-    console.error("Registration error:", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 }
-    );
+    setAuthCookies(res, accessToken, refreshToken);
+    return res;
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ message: "Server error" }, { status: 500 });
   }
 }

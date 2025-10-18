@@ -2,7 +2,6 @@
 import Embed from "@editorjs/embed";
 import Table from "@editorjs/table";
 import List from "@editorjs/list";
-import Paragraph from "@editorjs/paragraph";
 import Warning from "@editorjs/warning";
 import Code from "@editorjs/code";
 import LinkTool from "@editorjs/link";

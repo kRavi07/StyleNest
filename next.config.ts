@@ -8,14 +8,20 @@ const nextConfig: NextConfig = {
   // output: 'export',
 
   images: {
-    domains: ["yourcdn.com", "res.cloudinary.com", "images.pexels.com"], // Add trusted image domains
+    domains: [
+      "pub-1991eca6656342cfb1cbe65730ec9709.r2.dev",
+      "res.cloudinary.com",
+      "images.pexels.com",
+      "placeholder.com",
+    ], // Add trusted image domains
   },
+
+  typedRoutes: true,
 
   experimental: {
     serverActions: {
-      allowedOrigins: ["*", "localhost"], // Specify allowed origins for server actions
-    }, // For App Router with Server Actions
-    typedRoutes: true, // Type-safe routes (Next.js 14+)
+      allowedOrigins: ["*", "localhost"],
+    },
   },
 
   typescript: {

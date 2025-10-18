@@ -1,32 +1,29 @@
-// columns.ts
 import { ColumnDef } from "@tanstack/react-table";
 import { Product } from "@/types";
-import ActionMenu from "./table-action-menu";
-import { DataTableColumnHeader } from "@/components/ui/data-table/DataTableColumnHeader";
 import Image from "next/image";
-
-
+import { DataTableColumnHeader } from "@/components/ui/data-table/data-table-column-header";
+import ActionMenu from "./table-action-menu";
 
 export const productColumns: ColumnDef<Product>[] = [
   {
-    accessorKey: "image",
+    id: "image",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Image" />,
     cell: ({ row }) => {
-      const data = row.original;
+      const imageName = row.original.images[0]; // Use row.original to access the data
       return (
         <div className="flex items-center space-x-4">
           <div className="relative h-12 w-12 overflow-hidden rounded-md">
             <Image
-              src={"https://images.pexels.com/photos/1957478/pexels-photo-1957478.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"}
-              alt={data.name}
+              src={imageName || "https://images.pexels.com/photos/1957478/pexels-photo-1957478.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"}
+              alt={row.original.name || "Product Image"}
               fill
               className="h-full w-full object-cover object-center"
+
             />
           </div>
         </div>
       );
     },
-
   },
   {
     accessorKey: "name",
@@ -40,11 +37,11 @@ export const productColumns: ColumnDef<Product>[] = [
     accessorKey: "price",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Price" />,
     cell: ({ row }) => {
-      const data = row.original;
+      const price = row.getValue("price") as number;
       const formattedPrice = new Intl.NumberFormat("en-IN", {
         style: "currency",
         currency: "INR",
-      }).format(data.price);
+      }).format(price);
       return formattedPrice;
     },
   },
@@ -53,14 +50,11 @@ export const productColumns: ColumnDef<Product>[] = [
     header: ({ column }) => <DataTableColumnHeader column={column} title="Inventory" />
   },
   {
-    accessorKey: "_id",
+    id: "actions",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Actions" />,
     cell: ({ row }) => {
-      const data = row.original;
-
-      return (
-        <ActionMenu />
-      );
+      const id = row.original._id;
+      return <ActionMenu id={id} />;
     },
   },
 ];

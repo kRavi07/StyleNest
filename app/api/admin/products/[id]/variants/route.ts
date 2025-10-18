@@ -2,17 +2,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import Product from "@/lib/db/models/product";
 import connectToDatabase from "@/lib/db/mongoose";
-
-import { z } from "zod";
 import { processFileUpload } from "@/lib/services/file-services";
 import { variantSchema } from "@/lib/validation/product";
 import { parseFormData } from "@/lib/services/form-parser";
-
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+import mongoose from "mongoose";
+type Params = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+export async function POST(req: NextRequest, { params }: Params) {
   await connectToDatabase();
+
+  const { id } = await params;
 
   const formData = await req.formData();
   if (!formData) {
@@ -30,7 +32,6 @@ export async function POST(
   const files = formData.getAll("images");
 
   const parsedData = variantSchema.safeParse(parsedFormData);
-  console.log("Parsed Data:", parsedData);
   if (!parsedData.success) {
     return NextResponse.json(
       {
@@ -64,12 +65,19 @@ export async function POST(
     }
   }
 
-  const product = await Product.findById(params.id);
+  const product = await Product.findById(id);
   if (!product) {
     return NextResponse.json({ error: "Product not found" }, { status: 404 });
   }
 
-  product.variants.push(parsedData.data);
+  const variantId = new mongoose.Types.ObjectId();
+
+  product.variants.push({
+    ...parsedData.data,
+    _id: variantId,
+    images: uploadedUrls,
+    stock: parsedData.data.stock ? parsedData.data.stock : 0,
+  });
   await product.save();
 
   return NextResponse.json({ success: true, data: product });

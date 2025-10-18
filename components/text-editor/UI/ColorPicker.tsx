@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { clsx } from 'clsx';
 import { Palette, Check } from 'lucide-react';
-import { ColorPickerProps } from '../../lib/types';
+import { ColorPickerProps } from '../editor.types';
 
 export const ColorPicker: React.FC<ColorPickerProps> = ({
   colors,
@@ -56,15 +56,15 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                 onClick={() => handleColorSelect(color)}
                 title={color}
               >
-                <Check 
-                  size={12} 
+                <Check
+                  size={12}
                   className={clsx(
                     'absolute inset-0 m-auto',
-                    color === '#000000' || color.toLowerCase() === '#ffffff' 
-                      ? 'text-gray-500' 
+                    color === '#000000' || color.toLowerCase() === '#ffffff'
+                      ? 'text-gray-500'
                       : 'text-white'
                   )}
-                  style={{ 
+                  style={{
                     opacity: 0,
                     filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.5))'
                   }}
@@ -77,6 +77,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
             <div className="border-t border-gray-200 pt-3">
               <div className="flex items-center space-x-2">
                 <input
+                  title='color'
                   type="color"
                   value={customColor}
                   onChange={(e) => setCustomColor(e.target.value)}

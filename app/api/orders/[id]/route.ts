@@ -1,80 +1,36 @@
 import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/db/mongoose";
 import Order from "@/lib/db/models/order";
-import { verifyToken, isAdmin } from "@/lib/auth";
+import { requireAuthUser } from "@/lib/auth/server-auth";
+import Payments from "@/lib/db/models/razorpay-payments";
+import { mapPaymentToResponse } from "@/lib/service/order";
 
+type Params = {
+  params: Promise<{
+    id: string;
+  }>;
+};
 // GET a single order by ID
-export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(req: Request, { params }: Params) {
   try {
-    const authResult = await verifyToken(req);
-    if (!authResult.success || !authResult.user) {
+    const authResult = await requireAuthUser();
+    if (!authResult) {
       return NextResponse.json(
-        { success: false, error: authResult.error },
-        { status: authResult.status }
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
       );
     }
 
-    const { id: userId, role } = authResult.user;
-    const { id: orderId } = params;
+    const { id: userId } = authResult;
 
+    const { id: orderId } = await params;
     // Connect to the database
     await connectToDatabase();
 
     // Find order by ID
-    const order = await Order.findById(orderId);
-
-    if (!order) {
-      return NextResponse.json(
-        { success: false, error: "Order not found" },
-        { status: 404 }
-      );
-    }
-
-    // Regular users can only see their own orders
-    if (role !== "admin" && order.userId.toString() !== userId) {
-      return NextResponse.json(
-        { success: false, error: "Not authorized to access this order" },
-        { status: 403 }
-      );
-    }
-
-    return NextResponse.json({ success: true, data: order });
-  } catch (error) {
-    console.error("Error fetching order:", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 }
-    );
-  }
-}
-
-// PUT update an order (admin only)
-export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    // Verify admin permission
-    const authResult = await isAdmin(req);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { success: false, error: authResult.error },
-        { status: authResult.status }
-      );
-    }
-
-    const { id } = params;
-    const updates = await req.json();
-
-    await connectToDatabase();
-
-    // Find and update order
-    const order = await Order.findByIdAndUpdate(id, updates, {
-      new: true,
-      runValidators: true,
+    const order = await Order.findOne({
+      _id: orderId,
+      "customer.id": userId,
     });
 
     if (!order) {
@@ -84,9 +40,19 @@ export async function PUT(
       );
     }
 
-    return NextResponse.json({ success: true, data: order });
+    const payment = await Payments.findOne({
+      id: order.razorpayPaymentId,
+      order_id: order.razorpayOrderId,
+    }).select("method amount card wallet bank vpa upi international");
+
+    const updatedOrder = {
+      ...order.toObject(),
+      payment: payment && mapPaymentToResponse(payment),
+    };
+
+    return NextResponse.json({ success: true, data: updatedOrder });
   } catch (error) {
-    console.error("Error updating order:", error);
+    console.error("Error fetching order:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 }

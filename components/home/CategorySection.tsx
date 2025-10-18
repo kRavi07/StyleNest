@@ -38,13 +38,13 @@ const CategorySection = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {categories.map((category) => (
-            <Link 
+            <Link
               key={category.id}
-              href={category.href}
+              href={category.href as any}
               className="group relative rounded-lg overflow-hidden bg-black transition-transform hover:scale-[1.02] duration-300"
             >
               <div className="aspect-[3/4] w-full overflow-hidden">
-                <div 
+                <div
                   className="h-full w-full bg-cover bg-center transition-transform duration-700 group-hover:scale-110 group-hover:opacity-80"
                   style={{ backgroundImage: `url(${category.image})` }}
                 />

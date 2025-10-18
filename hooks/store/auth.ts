@@ -12,8 +12,7 @@ type AuthStore = {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  token: string;
-  login: (token: string, user: User) => void;
+  login: (user: User) => void;
   logout: () => void;
 };
 
@@ -29,11 +28,10 @@ export const useAuth = create<AuthStore>()(
   authMiddleware((set) => ({
     user: null,
     isLoading: false,
-    token: "",
     isAuthenticated: false,
-    login: (token: string, user: User) => {
-      set({ token, user, isAuthenticated: true });
+    login: (user: User) => {
+      set({ user, isAuthenticated: true });
     },
-    logout: () => set({ token: "", user: null, isAuthenticated: false }),
+    logout: () => set({ user: null, isAuthenticated: false }),
   }))
 );

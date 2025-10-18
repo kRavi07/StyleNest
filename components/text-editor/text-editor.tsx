@@ -1,5 +1,5 @@
+/* eslint-disable no-unused-vars */
 "use client";
-import { Button } from "@/components/ui/button";
 import { Editor, EditorContent } from "@tiptap/react";
 
 import { useRouter } from "next/navigation";
@@ -7,9 +7,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import "./style.css";
 import { MenuBar } from "./text-editor-menu";
-import EditorBubbleMenu from "./UI/bubble-menu";
 
-export default function DocumentEditor({ editor, editorHeight = '100px' }: { editor: Editor, editorHeight: string }) {
+export default function DocumentEditor({ editor }: { editor: Editor }) {
   const router = useRouter();
 
   const [open, setOpen] = useState<boolean>(false);
@@ -77,7 +76,6 @@ export default function DocumentEditor({ editor, editorHeight = '100px' }: { edi
   return (
     <div className="flex flex-col border borer-gray-300 dark:border-blue-50 ">
       <MenuBar editor={editor} />
-      <EditorBubbleMenu editor={editor} />
       <EditorContent editor={editor} className="min-h-[200px]" />
     </div>
   );

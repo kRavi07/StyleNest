@@ -1,7 +1,8 @@
+/* eslint-disable no-unused-vars */
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 
 export type User = {
@@ -28,7 +29,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const pathname = usePathname();
   const { toast } = useToast();
 
   // Check if user is authenticated on mount
@@ -123,7 +123,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   // Mock register function
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (name: string, email: string) => {
     setIsLoading(true);
 
     try {

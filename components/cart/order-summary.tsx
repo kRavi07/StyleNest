@@ -1,33 +1,40 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { RefreshCw } from "lucide-react";
-import { Cart } from "@/hooks/context/cart/cart-context";
 import { formatCurrency } from "@/lib/utils";
+import { CartState } from "@/hooks/store/cart/use-cart";
+import { useLoadUser } from "@/lib/react-query/user/query";
+import { useRouter } from "next/navigation";
 
 interface Props {
-    cart: Cart;
+    cart: CartState;
     promoCode: string;
     setPromoCode: (code: string) => void;
     isApplyingPromo: boolean;
     handleApplyPromo: () => void;
     handleCheckout: () => void;
+    isPending: boolean;
 }
 
 export default function OrderSummary({
     cart,
-    promoCode,
-    setPromoCode,
-    isApplyingPromo,
-    handleApplyPromo,
     handleCheckout,
+    isPending
 }: Props) {
+    const { isError, isLoading } = useLoadUser();
+    const router = useRouter();
+
     const subtotal = cart.subtotal;
-    const shipping = subtotal > 100 ? 0 : 10;
-    const tax = subtotal * 0.08;
-    const total = subtotal + shipping + tax;
+
+    const total = cart.subtotal;
+
+    const handleLogin = () => {
+        router.replace('/auth/login?redirect=/cart');
+    }
+
+
+
 
     return (
         <div className="bg-card border rounded-lg overflow-hidden sticky top-20">
@@ -43,13 +50,12 @@ export default function OrderSummary({
                 </div>
                 <div className="flex justify-between">
                     <span className="text-muted-foreground">Shipping</span>
-                    <span>{shipping === 0 ? "Free" : formatCurrency(shipping)}</span>
-                </div>
-                <div className="flex justify-between">
-                    <span className="text-muted-foreground">Tax (8%)</span>
-                    <span>{
-                        formatCurrency(tax)
-                    }</span>
+                    <div className="flex gap-2">
+                        <span className="text-muted-foreground line-through ">
+                            {formatCurrency(90)}
+                        </span>
+                        <span className="text-green-300">Free</span>
+                    </div>
                 </div>
 
                 <Separator />
@@ -61,7 +67,7 @@ export default function OrderSummary({
                     </span>
                 </div>
 
-                <div className="flex items-center space-x-2">
+                {/*<div className="flex items-center space-x-2">
                     <Input
                         placeholder="Promo Code"
                         value={promoCode}
@@ -71,11 +77,22 @@ export default function OrderSummary({
                         {isApplyingPromo && <RefreshCw className="h-4 w-4 mr-2 animate-spin" />}
                         Apply
                     </Button>
-                </div>
+                </div>*/}
 
-                <Button className="w-full" size="lg" onClick={handleCheckout}>
-                    Proceed to Checkout
-                </Button>
+                {
+                    !isError ? (
+                        <Button className="w-full" onClick={handleCheckout} disabled={cart.items.length === 0 || isPending || isLoading}>
+                            {
+                                isPending ? "Processing..." : "Checkout"
+                            }
+                        </Button>
+                    ) : (
+                        <Button className="w-full" variant="secondary" onClick={handleLogin}>
+                            Login to Checkout
+                        </Button>
+
+                    )
+                }
 
                 <p className="text-xs text-muted-foreground text-center">
                     Shipping and taxes calculated at checkout.

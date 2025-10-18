@@ -1,104 +1,120 @@
-import { StateCreator, create } from "zustand";
-import { createJSONStorage, devtools, persist } from "zustand/middleware";
-import { Product } from "@/types";
+import { toast } from "@/hooks/use-toast";
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+
+type LeanProduct = {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  mrp: number;
+  image: string;
+};
+
+type LeanVariant = {
+  id: string;
+  sku: string;
+  name: string;
+  price: number;
+  image: string;
+  stock: number;
+  optionValues: Record<string, string>;
+};
 
 export type CartItem = {
-  product: Product;
+  id: string;
+  product: LeanProduct;
+  variant?: LeanVariant;
+  hasVariants?: boolean;
   quantity: number;
-  size?: string;
-  color?: string;
 };
 
-type CartStore = {
+export type CartState = {
   items: CartItem[];
+  totalItemCount: number;
   subtotal: number;
-  count: number;
-  addItem: (
-    product: Product,
-    quantity: number,
-    size?: string,
-    color?: string
-  ) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
-  clearCart: () => void;
 };
 
-export const cartMiddleware = (f: StateCreator<CartStore>) =>
-  devtools(
-    persist(f, {
-      name: "cart-storage",
-      storage: createJSONStorage(() => localStorage),
-    })
-  );
+type CartActions = {
+  addItem: (itemData: Omit<CartItem, "id"> & { priceForTotal: number }) => void;
+  removeItem: (itemId: string) => void;
+  updateQuantity: (itemId: string, quantity: number) => void;
+  clearCart: () => void;
+  hasItems: (itemId: string) => boolean;
+};
 
-export const useCartStore = create<CartStore>()(
-  cartMiddleware((set, get) => ({
-    items: [],
-    subtotal: 0,
-    count: 0,
+const initialState: CartState = {
+  items: [],
+  totalItemCount: 0,
+  subtotal: 0,
+};
 
-    addItem: (product, quantity, size, color) => {
-      const existingIndex = get().items.findIndex(
-        (item) =>
-          item.product._id === product._id &&
-          item.size === size &&
-          item.color === color
-      );
+const calculateTotals = (items: CartItem[]) => {
+  const totalItemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const subtotal = items.reduce((sum, item) => {
+    const price = item?.product.price ?? 0;
+    return sum + price * item.quantity;
+  }, 0);
+  return { totalItemCount, subtotal };
+};
 
-      let newItems = [...get().items];
-      if (existingIndex !== -1) {
-        newItems[existingIndex].quantity += quantity;
-      } else {
-        newItems.push({ product, quantity, size, color });
-      }
+export const useCartStore = create<CartState & CartActions>()(
+  persist(
+    (set, get) => ({
+      ...initialState,
 
-      set({
-        items: newItems,
-        subtotal: calculateSubtotal(newItems),
-        count: calculateCount(newItems),
-      });
-    },
+      addItem: (itemData) => {
+        const { product, variant, quantity, hasVariants: isVariant } = itemData;
 
-    removeItem: (productId) => {
-      const newItems = get().items.filter(
-        (item) => item.product._id !== productId
-      );
-      set({
-        items: newItems,
-        subtotal: calculateSubtotal(newItems),
-        count: calculateCount(newItems),
-      });
-    },
+        console.log("Adding item to cart:", isVariant, variant);
 
-    updateQuantity: (productId, quantity) => {
-      if (quantity < 1) return;
+        const itemId = isVariant && variant ? variant.id : product.id;
 
-      const newItems = get().items.map((item) =>
-        item.product._id === productId ? { ...item, quantity } : item
-      );
+        const items = get().items;
 
-      set({
-        items: newItems,
-        subtotal: calculateSubtotal(newItems),
-        count: calculateCount(newItems),
-      });
-    },
+        const existingItem = items.find((item) => item.id === itemId);
 
-    clearCart: () => {
-      set({ items: [], subtotal: 0, count: 0 });
-    },
-  }))
+        if (existingItem) {
+          const updatedItems = items.map((item) =>
+            item.id === itemId
+              ? { ...item, quantity: item.quantity + quantity }
+              : item
+          );
+          set({ items: updatedItems, ...calculateTotals(updatedItems) });
+        } else {
+          const newItem: CartItem = {
+            ...itemData,
+            id: itemId,
+          };
+          const newItems = [...items, newItem];
+          set({ items: newItems, ...calculateTotals(newItems) });
+        }
+      },
+
+      removeItem: (itemId) => {
+        const updatedItems = get().items.filter((item) => item.id !== itemId);
+        set({ items: updatedItems, ...calculateTotals(updatedItems) });
+        toast({ title: "Item removed from cart." });
+      },
+
+      updateQuantity: (itemId, quantity) => {
+        let updatedItems = get().items.map((item) =>
+          item.id === itemId ? { ...item, quantity } : item
+        );
+
+        updatedItems = updatedItems.filter((item) => item.quantity > 0);
+        set({ items: updatedItems, ...calculateTotals(updatedItems) });
+      },
+
+      clearCart: () => {
+        set(initialState);
+      },
+      hasItems: (itemId: string) => {
+        return !!get().items.find((item) => item.id === itemId);
+      },
+    }),
+    {
+      name: "cart-storage", // localStorage key
+    }
+  )
 );
-
-// Helper functions
-function calculateSubtotal(items: CartItem[]) {
-  return items.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
-    0
-  );
-}
-
-function calculateCount(items: CartItem[]) {
-  return items.reduce((sum, item) => sum + item.quantity, 0);
-}

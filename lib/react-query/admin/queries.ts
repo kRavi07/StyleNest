@@ -8,9 +8,9 @@ import {
   getAllUsers,
   getEnquiryList,
   getSellers,
-  updateProduct,
 } from "./api";
 import { toast } from "sonner";
+import { updateProduct } from "./api/product";
 
 export const useRegisterAdmin = () => {
   return useMutation({
@@ -46,15 +46,6 @@ export const useAddProduct = () => {
   return useMutation({
     mutationKey: ["addProduct"],
     mutationFn: addProduct,
-
-    onSuccess: (data) => {
-      toast.success("Product has been added successfully");
-      return data;
-    },
-
-    onError: (error) => {
-      toast.error(error?.message);
-    },
   });
 };
 

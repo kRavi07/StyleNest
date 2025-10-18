@@ -9,118 +9,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Package, PackageCheck, PackageX, Search, Eye } from "lucide-react";
-import { Order } from "@/types";
 import { useAuth } from "@/hooks/store/auth";
+import { useGetOrders } from "@/lib/react-query/order/query";
 
-// Mock orders - would come from API in real app
-const mockOrders: Order[] = [
-  {
-    id: "ORD-2025-0001",
-    userId: "1",
-    items: [
-      {
-        productId: "1",
-        productName: "Classic Oxford Shirt",
-        price: 89.99,
-        quantity: 1,
-        size: "M",
-        color: "Blue"
-      },
-      {
-        productId: "7",
-        productName: "Premium Denim Jeans",
-        price: 129.99,
-        quantity: 1,
-        size: "32",
-        color: "Dark Blue"
-      }
-    ],
-    total: 219.98,
-    status: "delivered",
-    createdAt: "2025-03-15T10:30:00Z",
-    updatedAt: "2025-03-18T15:45:00Z",
-    shippingAddress: {
-      fullName: "John Doe",
-      addressLine1: "123 Main St",
-      addressLine2: "Apt 4B",
-      city: "New York",
-      state: "NY",
-      postalCode: "10001",
-      country: "United States",
-      phone: "555-123-4567"
-    },
-    paymentMethod: "Credit Card",
-    paymentStatus: "paid",
-    trackingNumber: "TRK123456789"
-  },
-  {
-    id: "ORD-2025-0002",
-    userId: "1",
-    items: [
-      {
-        productId: "3",
-        productName: "Relaxed Linen Dress",
-        price: 129.99,
-        quantity: 1,
-        size: "S",
-        color: "White"
-      }
-    ],
-    total: 129.99,
-    status: "shipped",
-    createdAt: "2025-04-10T14:20:00Z",
-    updatedAt: "2025-04-11T09:15:00Z",
-    shippingAddress: {
-      fullName: "John Doe",
-      addressLine1: "123 Main St",
-      addressLine2: "Apt 4B",
-      city: "New York",
-      state: "NY",
-      postalCode: "10001",
-      country: "United States",
-      phone: "555-123-4567"
-    },
-    paymentMethod: "PayPal",
-    paymentStatus: "paid",
-    trackingNumber: "TRK987654321"
-  },
-  {
-    id: "ORD-2025-0003",
-    userId: "1",
-    items: [
-      {
-        productId: "5",
-        productName: "Leather Crossbody Bag",
-        price: 149.99,
-        quantity: 1,
-        color: "Brown"
-      }
-    ],
-    total: 149.99,
-    status: "processing",
-    createdAt: "2025-05-01T11:45:00Z",
-    updatedAt: "2025-05-01T12:30:00Z",
-    shippingAddress: {
-      fullName: "John Doe",
-      addressLine1: "123 Main St",
-      addressLine2: "Apt 4B",
-      city: "New York",
-      state: "NY",
-      postalCode: "10001",
-      country: "United States",
-      phone: "555-123-4567"
-    },
-    paymentMethod: "Credit Card",
-    paymentStatus: "paid",
-    trackingNumber: undefined
-  }
-];
+
 
 export default function OrdersPage() {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth((state: any) => state);
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("all");
-  const [orders, setOrders] = useState<Order[]>([]);
+  const { data: orders, isLoading: isLoadingOrders, isError } = useGetOrders({
+    status: "all",
+    page: 1,
+    limit: 10
+  });
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -129,17 +31,14 @@ export default function OrdersPage() {
     }
   }, [isLoading, isAuthenticated, router]);
 
-  // Simulate loading orders from API
+  //update url with active tab
   useEffect(() => {
-    if (user) {
-      // Filter orders based on active tab
-      if (activeTab === "all") {
-        setOrders(mockOrders);
-      } else {
-        setOrders(mockOrders.filter(order => order.status === activeTab));
-      }
-    }
-  }, [user, activeTab]);
+    const url = new URL(window.location.href);
+    url.searchParams.set("status", activeTab.toLowerCase());
+    window.history.replaceState({}, "", url);
+  }, [activeTab]);
+
+
 
   // Show loading state
   if (isLoading || !user) {
@@ -175,6 +74,33 @@ export default function OrdersPage() {
       day: 'numeric'
     });
   };
+
+  if (isLoadingOrders) {
+    return (
+      <div className="container mx-auto px-4 py-16 text-center">
+        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-lg">Loading your orders...</p>
+      </div>
+    );
+  }
+
+  if (!orders || orders?.data.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-16 text-center">
+        <p className="text-lg">No orders found.</p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="container mx-auto px-4 py-16 text-center">
+        <p className="text-lg">Error loading orders.</p>
+      </div>
+    );
+  }
+
+
 
   return (
     <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
@@ -222,11 +148,11 @@ export default function OrdersPage() {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {orders.map((order) => (
-                    <div key={order.id} className="border rounded-lg overflow-hidden">
+                  {orders?.data.map((order: any) => (
+                    <div key={order._id} className="border rounded-lg overflow-hidden">
                       <div className="bg-muted/30 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
-                          <p className="font-medium">{order.id}</p>
+                          <p className="font-medium">{order.orderNumber}</p>
                           <p className="text-sm text-muted-foreground">
                             Placed on {formatDate(order.createdAt)}
                           </p>
@@ -236,7 +162,7 @@ export default function OrdersPage() {
                             {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                           </Badge>
                           <Button variant="outline" size="sm" asChild>
-                            <Link href={`/account/orders/${order.id}`}>
+                            <Link href={`/account/orders/${order._id}`}>
                               <Eye className="h-4 w-4 mr-1" />
                               View Details
                             </Link>
@@ -247,10 +173,10 @@ export default function OrdersPage() {
                       <div className="p-4">
                         <h3 className="font-medium mb-2">Items</h3>
                         <div className="space-y-3">
-                          {order.items.map((item, index) => (
+                          {order.items.map((item: any, index: number) => (
                             <div key={index} className="flex justify-between items-center">
                               <div>
-                                <p>{item.productName}</p>
+                                <p>{item.name}</p>
                                 <div className="text-sm text-muted-foreground">
                                   {item.size && <span>Size: {item.size}</span>}
                                   {item.size && item.color && <span> | </span>}
@@ -258,7 +184,7 @@ export default function OrdersPage() {
                                   <span> | Qty: {item.quantity}</span>
                                 </div>
                               </div>
-                              <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                              <p className="font-medium">{(item.price * item.quantity).toFixed(2)}</p>
                             </div>
                           ))}
                         </div>

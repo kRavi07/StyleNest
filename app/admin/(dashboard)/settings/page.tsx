@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Icons } from "@/components/icons";
+import { Icons } from "@/components/admin/icons";
 import {
   Select,
   SelectContent,
@@ -34,7 +34,7 @@ export default function SettingsPage() {
           <TabsTrigger value="shipping">Shipping</TabsTrigger>
           <TabsTrigger value="advanced">Advanced</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="general" className="space-y-4">
           <Card>
             <CardHeader>
@@ -62,12 +62,12 @@ export default function SettingsPage() {
                   <Input id="website" type="url" defaultValue="https://commercehub.example" />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="storeAddress">Store Address</Label>
                 <Textarea id="storeAddress" defaultValue="123 Commerce St, Suite 101&#10;San Francisco, CA 94103&#10;United States" />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="storeLogo">Store Logo</Label>
                 <div className="flex items-center gap-4">
@@ -82,12 +82,12 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle>Regional Settings</CardTitle>
               <CardDescription>
-                Configure your store's localization settings.
+                Configure your store localization settings.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -154,7 +154,7 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="payment" className="space-y-4">
           <Card>
             <CardHeader>
@@ -219,7 +219,7 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle>Tax Settings</CardTitle>
@@ -232,7 +232,7 @@ export default function SettingsPage() {
                 <Switch id="enableTaxes" defaultChecked />
                 <Label htmlFor="enableTaxes">Enable automatic tax calculations</Label>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="taxBasis">Tax Calculation Based On</Label>
@@ -247,7 +247,7 @@ export default function SettingsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="defaultTaxClass">Default Tax Class</Label>
                   <Select defaultValue="standard">
@@ -262,12 +262,13 @@ export default function SettingsPage() {
                   </Select>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label>Display Prices in Shop</Label>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex items-center space-x-2">
                     <input
+                      aria-label="priceExcludingTax"
                       type="radio"
                       id="priceExcludingTax"
                       name="priceDisplay"
@@ -280,6 +281,7 @@ export default function SettingsPage() {
                   </div>
                   <div className="flex items-center space-x-2">
                     <input
+                      aria-label="priceIncludingTax"
                       type="radio"
                       id="priceIncludingTax"
                       name="priceDisplay"
@@ -294,7 +296,7 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="shipping" className="space-y-4">
           <Card>
             <CardHeader>
@@ -332,9 +334,9 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="flex items-center justify-between space-x-2">
                   <div className="flex flex-col space-y-1">
                     <Label htmlFor="freeShipping" className="flex items-center gap-2">
@@ -362,9 +364,9 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="flex items-center justify-between space-x-2">
                   <div className="flex flex-col space-y-1">
                     <Label htmlFor="localPickup" className="flex items-center gap-2">
@@ -380,7 +382,7 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle>Shipping Zones</CardTitle>
@@ -434,7 +436,7 @@ export default function SettingsPage() {
                   </Button>
                 </div>
               </div>
-              
+
               <Button variant="outline">
                 <Icons.add className="mr-2 h-4 w-4" />
                 Add Shipping Zone
@@ -442,7 +444,7 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="advanced" className="space-y-4">
           <Card>
             <CardHeader>
@@ -485,14 +487,14 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </div>
-              
+
               <Button variant="outline">
                 <Icons.add className="mr-2 h-4 w-4" />
                 Generate New API Key
               </Button>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle>Export Data</CardTitle>
@@ -521,7 +523,7 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle>Dangerous Zone</CardTitle>
@@ -539,9 +541,9 @@ export default function SettingsPage() {
                   Clear Test Data
                 </Button>
               </div>
-              
+
               <Separator />
-              
+
               <div className="space-y-2">
                 <h3 className="font-medium text-destructive">Reset Store</h3>
                 <p className="text-sm text-muted-foreground">

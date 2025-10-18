@@ -21,9 +21,8 @@ import { DataTable } from "@/components/ui/data-table/data-table";
 
 export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const { ref, inView } = useInView();
+  const { inView } = useInView();
 
   const { pageIndex, pageSize, handlePageChange, handlePageSizeChange } = usePagination();
 
@@ -33,7 +32,6 @@ export default function ProductsPage() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    isFetching,
     isLoading,
   } = useFetchProductsInfinite(searchQuery, categoryFilter, undefined, pageSize);
 
@@ -42,10 +40,6 @@ export default function ProductsPage() {
     [data]
   );
 
-  const categories = useMemo(
-    () => Array.from(new Set(products.map((p) => p.category?.name).filter(Boolean))),
-    [products]
-  );
 
 
   useEffect(() => {
@@ -75,12 +69,29 @@ export default function ProductsPage() {
         <CardContent>
           <DataTable
             columns={productColumns}
-            data={products}
-            filterColumn="name"
+            data={products || []}
             pageIndex={pageIndex}
             pageSize={pageSize}
             onPageChange={handlePageChange}
-            onPageSizeChange={handlePageSizeChange} />
+            onPageSizeChange={handlePageSizeChange}
+            config={{
+              enableSearch: true,
+              enableColumnVisibility: true,
+              enableRowSelection: true,
+              enableBulkActions: true,
+              enableExport: true,
+              enableFacetedFilters: true,
+              enableDensity: true,
+              enableRefresh: true,
+              searchPlaceholder: "Search users...",
+              pageSize: 10,
+              pageSizeOptions: [5, 10, 20, 30, 50],
+            }}
+            isLoading={isLoading}
+            searchColumn={["orderNumber", "status", "customer"]}
+
+
+          />
         </CardContent>
       </Card>
     </div>

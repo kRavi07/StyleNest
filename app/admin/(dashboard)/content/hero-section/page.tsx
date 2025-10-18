@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Icons } from "@/components/icons";
+import { Icons } from "@/components/admin/icons";
 import { useToast } from "@/hooks/use-toast";
 
 export default function HeroSectionPage() {
@@ -110,7 +110,7 @@ export default function HeroSectionPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div 
+            <div
               className="relative h-[400px] rounded-lg overflow-hidden"
               style={{
                 backgroundImage: `url(${heroData.backgroundImage})`,

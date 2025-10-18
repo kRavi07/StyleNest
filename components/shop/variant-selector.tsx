@@ -177,7 +177,7 @@ export function VariantSelector({
                             {attr.required && <span className="text-red-500 ml-1">*</span>}
                         </label>
                         {selections[attr.name] && (
-                            <span className="text-xs text-gray-500">
+                            <span className="text-sm text-white dark:text-gray-500">
                                 {
                                     attr.options.find(
                                         (o) => o.value === selections[attr.name]

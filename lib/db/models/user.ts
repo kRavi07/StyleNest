@@ -1,14 +1,18 @@
-import mongoose, { Schema, Document } from "mongoose";
-import { Address } from "@/types";
+/* eslint-disable no-unused-vars */
+import mongoose, { Schema, Document, InferSchemaType } from "mongoose";
+import bcrypt from "bcryptjs";
 
 export interface UserDocument extends Document {
   name: string;
   email: string;
   password: string;
+  mobileno: string;
   role: "user" | "admin";
-  addresses: Address[];
+  status: "active" | "inactive";
   createdAt: Date;
   updatedAt: Date;
+  resetPasswordToken: String;
+  resetPasswordExpires: Date;
 }
 
 const UserSchema = new Schema(
@@ -24,6 +28,15 @@ const UserSchema = new Schema(
       unique: true,
       trim: true,
       lowercase: true,
+      index: true,
+    },
+    mobileno: {
+      type: String,
+      required: [true, "Please provide a mobile number"],
+      unique: true,
+      trim: true,
+      lowercase: true,
+      index: true,
     },
     password: {
       type: String,
@@ -36,23 +49,30 @@ const UserSchema = new Schema(
       enum: ["user", "admin"],
       default: "user",
     },
-    addresses: [
-      {
-        fullName: String,
-        addressLine1: String,
-        addressLine2: String,
-        city: String,
-        state: String,
-        postalCode: String,
-        country: String,
-        phone: String,
-      },
-    ],
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active",
+    },
   },
   {
     timestamps: true,
   }
 );
+
+UserSchema.methods.setPassword = async function (password: string) {
+  const salt = await bcrypt.genSalt(12);
+  this.password = await bcrypt.hash(password, salt);
+};
+
+UserSchema.methods.validatePassword = async function (password: string) {
+  return bcrypt.compare(password, this.password);
+};
+
+export type UserDoc = InferSchemaType<typeof UserSchema> & {
+  setPassword(password: string): Promise<void>;
+  validatePassword(password: string): Promise<boolean>;
+};
 
 export default mongoose.models.User ||
   mongoose.model<UserDocument>("User", UserSchema);

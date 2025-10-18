@@ -1,17 +1,18 @@
+/* eslint-disable no-unused-vars */
 "use client";
 
 import React, { memo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Trash2, Minus, Plus } from "lucide-react";
-import { CartItem } from "@/hooks/context/cart/cart-context";
 import { formatCurrency } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { CartItem } from "@/hooks/store/cart/use-cart";
 
 interface Props {
     item: CartItem;
-    onQuantityChange: (productId: string, quantity: number) => void;
-    onRemove: (productId: string) => void;
+    onQuantityChange: (itemId: string, quantity: number) => void;
+    onRemove: (itemId: string) => void;
 }
 
 const CartItemCard = ({ item, onQuantityChange, onRemove }: Props) => {
@@ -28,7 +29,7 @@ const CartItemCard = ({ item, onQuantityChange, onRemove }: Props) => {
                 <div
                     className="w-24 h-24 rounded bg-muted/20 flex-shrink-0"
                     style={{
-                        backgroundImage: `url(${item.product.images[0]})`,
+                        backgroundImage: `url(${item.product.image})`,
                         backgroundSize: "cover",
                         backgroundPosition: "center",
                     }}
@@ -36,20 +37,16 @@ const CartItemCard = ({ item, onQuantityChange, onRemove }: Props) => {
                 <div className="flex-1">
                     <div className="flex justify-between">
                         <div>
-                            <Link href={`/products/${item.product._id}`} className="font-medium hover:underline">
-                                {item.product.name}
+                            <Link href={`/products/${item.product.id}`} className="font-medium hover:underline">
+                                {
+                                    item.hasVariants && item.variant ? item.variant.name : item.product.name}
                             </Link>
-                            <div className="text-sm text-muted-foreground mt-1">
-                                {item.size && <span>Size: {item.size}</span>}
-                                {item.size && item.color && <span> | </span>}
-                                {item.color && <span>Color: {item.color}</span>}
-                            </div>
                             <div className="text-sm font-medium mt-2">
                                 {formatCurrency(item.product.price)}
                             </div>
                         </div>
                         <button
-                            onClick={() => onRemove(item.product._id)}
+                            onClick={() => onRemove(item.id)}
                             className="text-muted-foreground hover:text-destructive"
                         >
                             <Trash2 className="h-4 w-4" />
@@ -62,7 +59,7 @@ const CartItemCard = ({ item, onQuantityChange, onRemove }: Props) => {
                                 variant="outline"
                                 size="icon"
                                 className="h-8 w-8"
-                                onClick={() => onQuantityChange(item.product._id, item.quantity - 1)}
+                                onClick={() => onQuantityChange(item.id, item.quantity - 1)}
                                 disabled={item.quantity <= 1}
                             >
                                 <Minus className="h-3 w-3" />
@@ -72,16 +69,13 @@ const CartItemCard = ({ item, onQuantityChange, onRemove }: Props) => {
                                 variant="outline"
                                 size="icon"
                                 className="h-8 w-8"
-                                onClick={() => onQuantityChange(item.product._id, item.quantity + 1)}
-                                disabled={item.quantity >= item.product.inventory}
+                                onClick={() => onQuantityChange(item.id, item.quantity + 1)}
                             >
                                 <Plus className="h-3 w-3" />
                             </Button>
                         </div>
                         <div className="font-medium">
-                            {
-                                formatCurrency(item.product.price * item.quantity)
-                            }
+                            {formatCurrency(item.product.price * item.quantity)}
                         </div>
                     </div>
                 </div>

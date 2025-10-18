@@ -2,11 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Icons } from "@/components/admin/icons";
-import { Controller, useFieldArray, useFormContext } from "react-hook-form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useGetAttributes } from "@/lib/react-query/admin/query/attributes";
-import { VariantAttribute } from "@/lib/react-query/query.type";
-import { OptionType } from "@/components/ui/multi-select";
+import { useFieldArray } from "react-hook-form";
 
 type Props = {
     variantIndex: number;
@@ -15,7 +11,7 @@ type Props = {
 
 export default function OptionValuesArray({ variantIndex, form }: Props) {
 
-    const { control, register, formState } = form;
+    const { control, register } = form;
 
     const { fields, append, remove } = useFieldArray({
         control,

@@ -1,5 +1,6 @@
 "use client";
 
+import { getErrorMessage } from "@/lib/utils";
 import {
     QueryClient,
     QueryClientProvider,
@@ -8,6 +9,7 @@ import {
 } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export interface ReactQueryClientProviderProps {
     children: React.ReactNode;
@@ -17,11 +19,15 @@ export const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
             throwOnError: false,
-            retry: 1,
+            retry: false,
             refetchOnWindowFocus: false,
+        },
+        mutations: {
+            throwOnError: false,
         },
     },
 });
+
 
 const ReactQueryClientProviders = ({
     children,

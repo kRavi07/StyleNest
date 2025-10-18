@@ -7,9 +7,9 @@ import category from "@/lib/db/models/category";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = (await params).id;
+  const { id } = await params;
 
   if (!id || typeof id !== "string" || !mongoose.Types.ObjectId.isValid(id)) {
     return NextResponse.json({ error: "Invalid category ID" }, { status: 400 });

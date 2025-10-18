@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import {
     Card,
     CardContent,
@@ -11,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 import React, { useEffect, useState } from "react";
-import { Controller, useFieldArray, useFormContext } from "react-hook-form";
+import { Controller, useFieldArray } from "react-hook-form";
 import AttributeSelector, {
     AttributeWithValues,
 } from "./attribute-selecto";

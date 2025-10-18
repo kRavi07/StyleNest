@@ -1,13 +1,3 @@
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 
 import {
   Menubar,
@@ -19,35 +9,23 @@ import {
 import { ToggleGroup } from "@/components/ui/toggle-group";
 
 import {
-  ImageIcon,
-  FileUpIcon,
   TableIcon,
-  YoutubeIcon,
-  LinkIcon,
-  Type,
+
   Undo,
   Redo,
 } from "lucide-react";
-import { useState, useRef, useCallback, useEffect } from "react";
-import { Label } from "@/components/ui/label";
+import { useState, useEffect } from "react";
 import {
-  Tooltip,
-  TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { TOOLBAR_ITEMS } from "./tools-config";
 import { FontFamilySelect } from "./FontFamilyPicker";
 import React from "react";
-import { toast } from "sonner";
 import { Editor } from "@tiptap/react";
 import ToolbarButton from "./UI/ToolbarButton";
-import { DropdownMenuItem } from "../ui/dropdown-menu";
-import ToolbarDropdown from "./UI/toolbardropdown";
 import ColorPicker from "./modules/color-picker";
 import ImageUploader from "./modules/image-uploader";
 import { HeadingSelector } from "./modules/heading-selector";
-import TableDropdown from "./modules/table-dropdown";
 import LinkManager from "./modules/link-manager";
 import { Separator } from "../ui/separator";
 import { cn } from "@/lib/utils";
@@ -133,14 +111,6 @@ const TableMenu = ({ editor }: any) => [
 export const MenuBar = ({ editor }: { editor: Editor }) => {
   const [imageUploadUrl, setImageUploadUrl] = useState<string>("");
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const colorInputRef = useRef<HTMLInputElement>(null);
-
-  const [youtube_url, setYoutubeUrl] = useState<string>("");
-  const [width, setWidth] = useState<string>("");
-  const [height, setHeight] = useState<string>("");
-  const [link, setLink] = useState<string>("");
-  const [openLinkPanel, setOpenLinkPanel] = useState<boolean>(false);
 
   useEffect(() => {
     editor.commands.setFontSize("16px");

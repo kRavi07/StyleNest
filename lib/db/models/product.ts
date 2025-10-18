@@ -1,261 +1,9 @@
-import mongoose, { Schema, Document, ObjectId, Types } from "mongoose";
+import mongoose, { Schema, Document, Types, Model } from "mongoose";
 import Category from "./category";
-
-/*
-export interface ProductDocument extends Document {
-  name: string;
-  slug: string;
-  shortDescription: string;
-  description: string;
-  price: number;
-  mrp: number;
-  category: ObjectId;
-  subcategory: ObjectId;
-  images: string[];
-  inventory: number;
-  inventoryStatsus: string;
-  featured: boolean;
-  rating: number;
-  reviews: number;
-  isNewProduct: boolean;
-  isSale: boolean;
-  isActive: boolean;
-  variantAttribute?: string[];
-  gender: string;
-  variants?: {
-    name: string;
-    sku: string;
-    price: number;
-    stock: number;
-    images: string[];
-    optionValues: [{ name: String; value: String }];
-    attributes: [
-      {
-        name: string;
-        value: string;
-      }
-    ];
-  }[];
-  attributes: [
-    {
-      name: string;
-      value: string;
-    }
-  ];
-  seo: {
-    title: string;
-    description: string;
-    keywords: string;
-  };
-  createdAt: Date;
-  updatedAt: Date;
-  isArchivred?: boolean;
-  isDeleted?: boolean;
-  deletedAt?: Date;
-  archivedAt?: Date;
-}
-
-const ProductSchema = new Schema(
-  {
-    name: {
-      type: String,
-      required: [true, "Please provide a product name"],
-      maxlength: [100, "Name cannot be more than 100 characters"],
-    },
-    slug: {
-      type: String,
-      required: [true, "Please provide a product slug"],
-      maxlength: [100, "Name cannot be more than 100 characters"],
-      minlength: [3, "Slug must be at least 3 characters"],
-    },
-    shortDescription: {
-      type: String,
-      required: [true, "Please provide a short description"],
-      maxlength: [200, "Description cannot be more than 200 characters"],
-    },
-    description: {
-      type: String,
-      required: [true, "Please provide a description"],
-    },
-    price: {
-      type: Number,
-      required: [true, "Please provide a price"],
-    },
-    mrp: {
-      type: Number,
-      required: [true, "Please provide MRP"],
-    },
-    gender: {
-      type: String,
-    },
-    category: {
-      required: [true, "Please provide a category"],
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
-      validate: {
-        validator: async function (value: string) {
-          const category = await mongoose.models.Category.findById(value);
-          return !!category; // Ensure category exists
-        },
-        message: "Category does not exist",
-      },
-    },
-
-    subcategory: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
-      validate: {
-        validator: async function (value: string) {
-          const category = await Category.findById(value);
-          return !!category;
-        },
-        message: "Category does not exist",
-      },
-    },
-    variantAttribute: {
-      type: [String],
-      default: [],
-    },
-    hasVariants: {
-      type: Boolean,
-      default: false,
-    },
-    variants: {
-      type: [
-        {
-          name: String,
-          sku: String,
-          price: Number,
-          stock: Number,
-          images: [String],
-          optionValues: [{ name: String, value: String }],
-          attributes: [
-            {
-              name: String,
-              value: String,
-            },
-          ],
-        },
-      ],
-      default: [],
-    },
-    attributes: {
-      type: [
-        {
-          name: String,
-          value: String,
-        },
-      ],
-      default: [],
-    },
-    seo: {
-      title: String,
-      description: String,
-      keywords: String,
-    },
-
-    images: {
-      type: [String],
-      required: [true, "Please provide at least one image"],
-    },
-    inventory: {
-      type: Number,
-      required: [true, "Please provide inventory count"],
-      default: 0,
-    },
-    inventoryStatsus: {
-      type: String,
-      enum: ["in-stock", "out-of-stock", "pre-order"],
-      default: "in-stock",
-    },
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
-    featured: {
-      type: Boolean,
-      default: false,
-    },
-    rating: {
-      type: Number,
-      default: 0,
-    },
-    reviews: {
-      type: Number,
-      default: 0,
-    },
-    isNewProduct: {
-      type: Boolean,
-      default: false,
-    },
-    isSale: {
-      type: Boolean,
-      default: false,
-    },
-    isArchivred: {
-      type: Boolean,
-      default: false,
-    },
-    isDeleted: {
-      type: Boolean,
-      default: false,
-    },
-    deletedAt: {
-      type: Date,
-    },
-    archivedAt: {
-      type: Date,
-    },
-  },
-  {
-    timestamps: true,
-  }
-);
-
-export default mongoose.models.Product ||
-  mongoose.model<ProductDocument>("Product", ProductSchema);*/
-
-function generateOptionTypesFromVariants(variants: IVariant[]): IOptionType[] {
-  const optionMap = new Map<string, Set<string>>();
-
-  for (const variant of variants) {
-    const optionValues = variant.optionValues;
-
-    // Handle Map type (defensive)
-    if (optionValues instanceof Map) {
-      const entries = Array.from(optionValues.entries());
-      for (const [name, value] of entries) {
-        if (!optionMap.has(name)) {
-          optionMap.set(name, new Set());
-        }
-        optionMap.get(name)!.add(value);
-      }
-    }
-    // Handle plain object
-    else if (typeof optionValues === "object" && optionValues !== null) {
-      for (const [name, value] of Object.entries(optionValues)) {
-        if (!optionMap.has(name)) {
-          optionMap.set(name, new Set());
-        }
-        optionMap.get(name)!.add(value);
-      }
-    }
-  }
-
-  return Array.from(optionMap.entries()).map(([name, values]) => ({
-    name,
-    values: Array.from(values),
-  }));
-}
 
 export interface IOptionType {
   name: string;
   values: string[];
-}
-
-export interface IOptionValue {
-  name: string;
-  value: string;
 }
 
 export interface IAttribute {
@@ -264,13 +12,13 @@ export interface IAttribute {
 }
 
 export interface IVariant {
-  _id: Types.ObjectId;
+  _id: Types.ObjectId | string;
   name: string;
   sku: string;
   price: number;
   mrp: number;
   stock: number;
-  images: string[];
+  images: string[] | (string | File)[];
   optionValues: Record<string, string>;
   attributes?: IAttribute[];
   isActive?: boolean;
@@ -281,10 +29,10 @@ export interface IProduct extends Document {
   slug: string;
   shortDescription: string;
   description: string;
-  price?: number;
-  mrp?: number;
+  price: number;
+  mrp: number;
   category: Types.ObjectId;
-  subcategory: Types.ObjectId;
+  subcategory?: Types.ObjectId;
   images: string[];
   inventory: number;
   featured: boolean;
@@ -299,9 +47,9 @@ export interface IProduct extends Document {
   optionTypes: IOptionType[];
   specifications: IAttribute[];
   seo: {
-    title: string;
-    description: string;
-    keywords: string;
+    title?: string;
+    description?: string;
+    keywords?: string;
   };
   deletedAt?: Date;
   archivedAt?: Date;
@@ -309,60 +57,37 @@ export interface IProduct extends Document {
   updatedAt: Date;
 }
 
-const OptionValueSchema = new Schema<IOptionValue>(
-  {
-    name: { type: String, required: [true, "Option name is required"] },
-    value: { type: String, required: [true, "Option value is required"] },
-  },
-  { _id: false }
-);
-
+// Simplified schemas
 const AttributeSchema = new Schema<IAttribute>(
   {
-    name: { type: String, required: [true, "Attribute name is required"] },
-    value: { type: String, required: [true, "Attribute value is required"] },
+    name: { type: String, required: true },
+    value: { type: String, required: true },
   },
   { _id: false }
 );
 
 const VariantSchema = new Schema<IVariant>(
   {
-    name: {
-      type: String,
-      required: [true, "Variant name is required"],
-      trim: true,
-    },
+    name: { type: String, required: true, trim: true },
     sku: {
       type: String,
-      required: [true, "SKU is required"],
+      required: true,
       unique: true,
       trim: true,
       index: true,
     },
-    price: {
-      type: Number,
-      required: [true, "Price is required"],
-      min: [0, "Price must be non-negative"],
-    },
-    mrp: {
-      type: Number,
-      required: [true, "MRP is required"],
-      min: [0, "MRP must be non-negative"],
-    },
-    stock: {
-      type: Number,
-      required: [true, "Stock is required"],
-      min: [0, "Stock cannot be negative"],
-    },
-    images: [{ type: String }],
+    price: { type: Number, required: true, min: 0 },
+    mrp: { type: Number, required: true, min: 0 },
+    stock: { type: Number, required: true, min: 0 },
+    images: [String],
     optionValues: {
       type: Map,
       of: String,
-      required: [true, "Option values are required"],
-      validate: {
-        validator: (map: Map<string, string>) => map.size > 0,
-        message: "At least one option value is required",
-      },
+      required: true,
+      validate: [
+        (map: Map<string, string>) => map.size > 0,
+        "At least one option value required",
+      ],
     },
     attributes: { type: [AttributeSchema], default: [] },
     isActive: { type: Boolean, default: true },
@@ -372,14 +97,14 @@ const VariantSchema = new Schema<IVariant>(
 
 const OptionTypeSchema = new Schema<IOptionType>(
   {
-    name: { type: String, required: [true, "Option type name is required"] },
+    name: { type: String, required: true },
     values: {
       type: [String],
       required: true,
-      validate: {
-        validator: (arr: string[]) => arr.length > 0,
-        message: "At least one value is required for an option type",
-      },
+      validate: [
+        (arr: string[]) => arr.length > 0,
+        "At least one value required",
+      ],
     },
   },
   { _id: false }
@@ -387,42 +112,27 @@ const OptionTypeSchema = new Schema<IOptionType>(
 
 const ProductSchema = new Schema<IProduct>(
   {
-    name: {
-      type: String,
-      required: [true, "Product name is required"],
-      trim: true,
-    },
+    name: { type: String, required: true, trim: true },
     slug: {
       type: String,
-      required: [true, "Slug is required"],
+      required: true,
       unique: true,
       trim: true,
       index: true,
     },
     shortDescription: { type: String, trim: true },
     description: { type: String, trim: true },
-    price: {
-      type: Number,
-      optional: true,
-    },
-    mrp: {
-      type: Number,
-      required: [true, "MRP is required"],
-      min: [0, "MRP must be non-negative"],
-    },
+    price: { type: Number, required: true, min: 0 },
+    mrp: { type: Number, required: true, min: 0 },
     category: {
       type: Schema.Types.ObjectId,
       ref: Category,
-      required: [true, "Category is required"],
+      required: true,
       index: true,
     },
     subcategory: { type: Schema.Types.ObjectId, ref: Category },
     images: { type: [String], default: [] },
-    inventory: {
-      type: Number,
-      default: 0,
-      min: [0, "Inventory cannot be negative"],
-    },
+    inventory: { type: Number, default: 0, min: 0 },
     featured: { type: Boolean, default: false },
     rating: { type: Number, default: 0, min: 0, max: 5 },
     reviews: { type: Number, default: 0, min: 0 },
@@ -449,36 +159,50 @@ const ProductSchema = new Schema<IProduct>(
   { timestamps: true }
 );
 
-// Full-text search
-ProductSchema.index({
-  name: "text",
-  slug: "text",
-  "seo.title": "text",
-  "seo.keywords": "text",
-  "seo.description": "text",
-});
+// Essential indexes only
+ProductSchema.index({ name: "text", description: "text", "seo.title": "text" });
+ProductSchema.index({ price: 1, createdAt: -1 });
+ProductSchema.index({ category: 1, isActive: 1 });
 
-// Compound index for category + visibility
-ProductSchema.index({ category: 1, isActive: 1, featured: -1 });
-
-console.log("🔥 Product pre-save going to be triggered");
+// Simplified pre-save hook
 ProductSchema.pre("save", function (next) {
-  console.log("Variants:");
-  console.log(this.variants);
-  console.log("hasVariants: ", this.hasVariants);
-  if (this.hasVariants && this.variants && this.variants.length > 0) {
-    const optionTypes = generateOptionTypesFromVariants(this.variants);
-    console.log(optionTypes);
-    this.optionTypes = optionTypes;
+  if (this.hasVariants && this.variants?.length > 0) {
+    // Generate option types from variants
+    const optionMap = new Map<string, Set<string>>();
 
+    this.variants.forEach((variant) => {
+      if (variant.optionValues) {
+        // Handle both Map and plain object cases
+        const optionEntries =
+          variant.optionValues instanceof Map
+            ? Array.from(variant.optionValues.entries())
+            : Object.entries(variant.optionValues);
+
+        optionEntries.forEach(([name, value]) => {
+          if (!optionMap.has(name)) optionMap.set(name, new Set());
+          optionMap.get(name)!.add(value);
+        });
+      }
+    });
+
+    this.optionTypes = Array.from(optionMap.entries()).map(
+      ([name, values]) => ({
+        name,
+        values: Array.from(values),
+      })
+    );
+
+    // Set min price and max MRP
     const prices = this.variants.map((v) => v.price);
-    this.price = Math.min(...prices);
     const mrps = this.variants.map((v) => v.mrp);
+    this.price = Math.min(...prices);
     this.mrp = Math.max(...mrps);
-  } else {
-    this.optionTypes = [];
   }
   next();
 });
-export default mongoose.models.Product ||
+
+const Product =
+  (mongoose.models.Product as Model<IProduct>) ||
   mongoose.model<IProduct>("Product", ProductSchema);
+
+export default Product;

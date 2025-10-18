@@ -2,19 +2,13 @@ import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
 import {
   deleteProductImage,
   fetchAllProducts,
-  getAllProducts,
+  getProdcutById,
   makeProductFeatured,
-  rejectProduct,
+  updateProduct,
+  uploadProductImages,
 } from "../api/product";
 import { toast } from "sonner";
 import { Product } from "@/types";
-
-type FetchProductsParams = {
-  pageParam?: number;
-  search?: string;
-  status?: string;
-  category?: string;
-};
 
 export type ProductResponse = {
   items: Product[];
@@ -48,25 +42,17 @@ export const useFetchProductsInfinite = (
   });
 };
 
-/*export const useFetchAllProducts = () => {
+export const useGetProductById = (id: string) => {
   return useQuery({
-    queryKey: ["getAllProducts"],
-    queryFn: () => getAllProducts(),
-    staleTime: 60 * 1000 * 10,
+    queryKey: ["getProductById", id],
+    queryFn: () => getProdcutById(id),
   });
-};*/
+};
 
-export const useRejectProduct = () => {
+export const useProductImageUpload = () => {
   return useMutation({
-    mutationKey: ["rejectProduct"],
-    mutationFn: rejectProduct,
-    onSuccess: (data) => {
-      toast.success("Product rejected successfully");
-      return data;
-    },
-    onError: (error) => {
-      toast.error(error?.message);
-    },
+    mutationKey: ["uploadProductImage"],
+    mutationFn: uploadProductImages,
   });
 };
 
@@ -81,6 +67,13 @@ export const useMakeProductFeatured = () => {
     onError: (error) => {
       toast.error(error?.message);
     },
+  });
+};
+
+export const useUpdateProduct = () => {
+  return useMutation({
+    mutationKey: ["updateProduct"],
+    mutationFn: updateProduct,
   });
 };
 

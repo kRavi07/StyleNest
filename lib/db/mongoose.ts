@@ -1,4 +1,5 @@
-import mongoose from "mongoose";
+/* eslint-disable no-unused-vars */
+import mongoose, { Types } from "mongoose";
 
 const MONGODB_URI =
   process.env.MONGODB_URI || "mongodb://localhost:27017/drimcot";
@@ -7,7 +8,6 @@ if (!MONGODB_URI) {
   throw new Error("Please define the MONGODB_URI environment variable");
 }
 
-// Augment global object with caching type
 declare global {
   var mongooseCache: {
     conn: typeof mongoose | null;
@@ -22,20 +22,33 @@ global.mongooseCache = global.mongooseCache || {
 };
 
 export async function connectToDatabase(): Promise<typeof mongoose> {
-  if (global.mongooseCache.conn) {
+  try {
+    if (global.mongooseCache.conn) {
+      return global.mongooseCache.conn;
+    }
+
+    if (!global.mongooseCache.promise) {
+      const opts = {
+        bufferCommands: false,
+      };
+
+      global.mongooseCache.promise = mongoose.connect(MONGODB_URI, opts);
+    }
+
+    global.mongooseCache.conn = await global.mongooseCache.promise;
     return global.mongooseCache.conn;
+  } catch (error) {
+    global.mongooseCache.promise = null;
+    console.error("Error connecting to MongoDB:", error);
+    throw error;
   }
-
-  if (!global.mongooseCache.promise) {
-    const opts = {
-      bufferCommands: false,
-    };
-
-    global.mongooseCache.promise = mongoose.connect(MONGODB_URI, opts);
-  }
-
-  global.mongooseCache.conn = await global.mongooseCache.promise;
-  return global.mongooseCache.conn;
 }
 
 export default connectToDatabase;
+
+export function toObjectId(id: string): Types.ObjectId {
+  if (!Types.ObjectId.isValid(id)) {
+    throw new Error(`Invalid ObjectId: ${id}`);
+  }
+  return new Types.ObjectId(id);
+}

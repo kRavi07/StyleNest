@@ -1,22 +1,23 @@
 import { NextResponse } from "next/server";
-import connectToDatabase from "@/lib/db/mongoose";
+import connectToDatabase, { toObjectId } from "@/lib/db/mongoose";
 import Order from "@/lib/db/models/order";
-import { verifyToken, isAdmin } from "@/lib/auth";
 import { resolveOrderItemsFromProduct } from "@/lib/utils/order-product-details";
 import { createOrderSchema } from "@/lib/validation/order";
-
+import { requireAuthUser } from "@/lib/auth/server-auth";
+import { createOrder } from "@/lib/services/orderservices";
+import Cart from "@/lib/db/models/cart";
 export async function GET(req: Request) {
   try {
     // Verify authentication
-    const authResult = await verifyToken(req);
-    if (!authResult.success || !authResult.user) {
+    const user = await requireAuthUser();
+    if (!user) {
       return NextResponse.json(
-        { success: false, error: authResult.error },
-        { status: authResult.status }
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
       );
     }
 
-    const { id: userId, role } = authResult.user;
+    const { id: userId, role } = user;
     const url = new URL(req.url);
     const page = parseInt(url.searchParams.get("page") || "1");
     const limit = parseInt(url.searchParams.get("limit") || "10");
@@ -29,12 +30,9 @@ export async function GET(req: Request) {
     // Build filter query
     const query: any = {};
 
-    // Regular users can only see their own orders
-    if (role !== "admin") {
-      query.userId = userId;
-    }
+    query["customer.id"] = userId;
 
-    if (status) query.status = status;
+    if (status && status !== "all") query.status = status;
 
     // Connect to the database
     await connectToDatabase();
@@ -44,6 +42,9 @@ export async function GET(req: Request) {
 
     // Get orders with pagination, filtering, and sorting
     const orders = await Order.find(query)
+      .select(
+        "-shippingAddress -billingAddress -customer -billingAddress -notes -razorpayOrderId -razorpaySignature"
+      )
       .sort({ [sort]: order === "desc" ? -1 : 1 })
       .skip(skip)
       .limit(limit);
@@ -70,40 +71,44 @@ export async function GET(req: Request) {
 // POST create a new order
 export async function POST(req: Request) {
   try {
-    // Verify authentication
-    const authResult = await verifyToken(req);
-    if (!authResult.success || !authResult.user) {
+    const user = await requireAuthUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id: userId, role } = user;
+
+    const body = await req.json();
+    const { shippingAddress, billingAddress, notes, paymentMethod } = body;
+
+    const cartId = await Cart.find({ user: toObjectId(userId) }).then(
+      (cart) => {
+        return cart[0]._id.toString();
+      }
+    );
+
+    if (!cartId) {
       return NextResponse.json(
-        { success: false, error: authResult.error },
-        { status: authResult.status }
+        { success: false, error: "Cart not found" },
+        { status: 404 }
       );
     }
 
-    const { id: userId, role } = authResult.user;
-
-    const body = await req.json();
-    const parsed = createOrderSchema.safeParse(body);
-
-    if (!parsed.success) {
-      return new Response(JSON.stringify({ error: parsed.error.format() }), {
-        status: 400,
-      });
-    }
-
-    const { items, ...rest } = parsed.data;
-    const resolvedItems = await resolveOrderItemsFromProduct(items);
+    //const resolvedItems = await resolveOrderItemsFromProduct(items);
 
     await connectToDatabase();
 
-    const orderData = await Order.create({
-      ...rest,
-      items: resolvedItems,
+    const order = await createOrder({
+      userId: user.id,
+      cartId,
+      paymentMethod,
+      shippingAddress,
+      billingAddress,
+      notes,
     });
 
-    return NextResponse.json(
-      { success: true, data: orderData },
-      { status: 201 }
-    );
+    return NextResponse.json({ success: true, data: order }, { status: 201 });
   } catch (error) {
     console.error("Error creating order:", error);
     return NextResponse.json(

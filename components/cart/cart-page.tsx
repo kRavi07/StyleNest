@@ -4,20 +4,26 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2, ShoppingBag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import OrderSummary from "./order-summary";
 import CartItemCard from "./cart-item";
 import { useCartStore } from "@/hooks/store/cart/use-cart";
+import { useSyncCart } from "@/lib/react-query/user/query";
+import { useAuth } from "@/hooks/store/auth";
+
 export default function CartPage() {
     const router = useRouter();
-    const { items, subtotal, updateQuantity, removeItem, clearCart } = useCartStore((state) => state);
+    const { items, subtotal, updateQuantity, removeItem, clearCart } =
+        useCartStore((state) => state);
     const { toast } = useToast();
     const [promoCode, setPromoCode] = useState("");
     const [isApplyingPromo, setIsApplyingPromo] = useState(false);
+
+    const { mutateAsync: syncCart, isPending: cartSyncPending } = useSyncCart();
+
+    console.log(items);
 
     const handleApplyPromo = () => {
         if (!promoCode.trim()) {
@@ -40,7 +46,7 @@ export default function CartPage() {
         }, 1000);
     };
 
-    const handleCheckout = () => {
+    const handleCheckout = async () => {
         if (items.length === 0) {
             toast({
                 title: "Empty cart",
@@ -49,7 +55,11 @@ export default function CartPage() {
             });
             return;
         }
-        router.push("/checkout");
+
+        await syncCart(items);
+
+        router.push("/checkout-new");
+
     };
 
     const cartItems = useMemo(() => items, [items]);
@@ -60,7 +70,7 @@ export default function CartPage() {
                 <ShoppingBag className="h-16 w-16 text-muted-foreground mb-4" />
                 <h2 className="text-xl font-semibold mb-2">Your cart is empty</h2>
                 <p className="text-muted-foreground mb-6">
-                    Looks like you havent added any products to your cart yet.
+                    Looks like you haven&apos;t added any products to your cart yet.
                 </p>
                 <Button asChild>
                     <Link href="/products">Start Shopping</Link>
@@ -80,13 +90,16 @@ export default function CartPage() {
                 <div className="lg:col-span-2">
                     <div className="bg-card border rounded-lg overflow-hidden">
                         <div className="px-6 py-4 bg-muted/50 flex justify-between">
-                            <h2 className="font-semibold">Cart Items ({cartItems.length})</h2>
+                            <h2 className="font-semibold">
+                                Cart Items ({cartItems.length})
+                            </h2>
                             <button
                                 onClick={() => {
                                     clearCart();
                                     toast({
                                         title: "Cart cleared",
-                                        description: "All items have been removed from your cart.",
+                                        description:
+                                            "All items have been removed from your cart.",
                                     });
                                 }}
                                 className="text-sm text-muted-foreground hover:text-destructive flex items-center"
@@ -99,7 +112,7 @@ export default function CartPage() {
                         <AnimatePresence>
                             {cartItems.map((item) => (
                                 <motion.div
-                                    key={`${item.product._id}-${item.size}-${item.color}`}
+                                    key={item.id} // ✅ Use composite ID from store
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -20 }}
@@ -107,8 +120,8 @@ export default function CartPage() {
                                 >
                                     <CartItemCard
                                         item={item}
-                                        onQuantityChange={updateQuantity}
-                                        onRemove={removeItem}
+                                        onQuantityChange={(id, qty) => updateQuantity(id, qty)} // ✅ Use item.id directly
+                                        onRemove={(id) => removeItem(id)}
                                     />
                                 </motion.div>
                             ))}
@@ -121,12 +134,14 @@ export default function CartPage() {
                         cart={{
                             items: cartItems,
                             subtotal,
+                            totalItemCount: cartItems.length,
                         }}
                         promoCode={promoCode}
                         setPromoCode={setPromoCode}
                         isApplyingPromo={isApplyingPromo}
                         handleApplyPromo={handleApplyPromo}
                         handleCheckout={handleCheckout}
+                        isPending={cartSyncPending}
                     />
                 </div>
             </div>

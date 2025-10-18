@@ -1,5 +1,4 @@
-import { useCart } from '@/hooks/context/cart/cart-context';
-import { useCartItemsCount } from '@/hooks/context/cart/cart-item-context';
+
 import { ShoppingBag } from 'lucide-react'
 import Link from 'next/link'
 import React from 'react'
@@ -8,7 +7,7 @@ import { useCartStore } from '@/hooks/store/cart/use-cart';
 
 const CartCount = () => {
 
-    const cartItemsCount = useCartStore((state) => state.count);
+    const cartItemsCount = useCartStore((state) => state.items.length);
 
 
     if (!cartItemsCount) {

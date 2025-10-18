@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { ChevronDown } from 'lucide-react';
-import { DropdownMenuProps } from '../../lib/types';
+import { DropdownMenuProps } from '../editor.types';
 
 export const DropdownMenu: React.FC<DropdownMenuProps> = ({
   trigger,
@@ -43,12 +43,12 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
         )}
       >
         {trigger}
-        <ChevronDown 
-          size={14} 
+        <ChevronDown
+          size={14}
           className={clsx(
             'ml-1 transition-transform',
             { 'rotate-180': isOpen }
-          )} 
+          )}
         />
       </button>
 

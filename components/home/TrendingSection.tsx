@@ -1,4 +1,4 @@
-import Image from "next/image";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
@@ -32,24 +32,24 @@ const TrendingSection = () => {
                 </Button>
               </div>
               <div className="relative aspect-square md:aspect-auto overflow-hidden">
-                <div 
+                <div
                   className="h-full w-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                  style={{ 
-                    backgroundImage: "url(https://images.pexels.com/photos/6347546/pexels-photo-6347546.jpeg?auto=compress&cs=tinysrgb&w=600)" 
+                  style={{
+                    backgroundImage: "url(https://images.pexels.com/photos/6347546/pexels-photo-6347546.jpeg?auto=compress&cs=tinysrgb&w=600)"
                   }}
                 />
               </div>
             </div>
           </div>
-          
+
           {/* Trending Item 2 */}
           <div className="group relative overflow-hidden rounded-lg bg-muted/50">
             <div className="grid grid-cols-1 md:grid-cols-2 h-full">
               <div className="order-2 md:order-1 relative aspect-square md:aspect-auto overflow-hidden">
-                <div 
+                <div
                   className="h-full w-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                  style={{ 
-                    backgroundImage: "url(https://images.pexels.com/photos/2896840/pexels-photo-2896840.jpeg?auto=compress&cs=tinysrgb&w=600)" 
+                  style={{
+                    backgroundImage: "url(https://images.pexels.com/photos/2896840/pexels-photo-2896840.jpeg?auto=compress&cs=tinysrgb&w=600)"
                   }}
                 />
               </div>

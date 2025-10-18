@@ -1,62 +1,60 @@
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { IVariant } from '@/lib/db/models/product'
+import { capitalizeFirstLetter } from '@/lib/utils'
 import { Product } from '@/types'
 import React from 'react'
 
-const ProductDetails = ({ product }: { product: Product }) => {
+const ProductDetails = ({ product, selectedVariant }: { product: Product, selectedVariant: IVariant | null }) => {
+
+    const renderFeatures = () => {
+        const features =
+            selectedVariant?.attributes && selectedVariant?.attributes?.length > 0
+                ? selectedVariant.attributes
+                : product?.specifications?.length > 0
+                    ? product.specifications
+                    : null;
+
+        if (!features) return null;
+
+        return (
+            <div>
+                <h3 className="font-semibold mb-2">Features</h3>
+                <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
+                    {features.map((spec, index) => (
+                        <li key={index}>
+                            <span className="font-semibold">
+                                {capitalizeFirstLetter(spec.name)}
+                            </span>
+                            <span className="ml-2">
+                                {capitalizeFirstLetter(spec.value)}
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        );
+    };
+
+
     return (
         <div className="mt-16">
             <Tabs defaultValue="details">
                 <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="details">Product Details</TabsTrigger>
-                    <TabsTrigger value="shipping">Shipping & Returns</TabsTrigger>
                     <TabsTrigger value="reviews">Reviews ({product.reviews})</TabsTrigger>
                 </TabsList>
                 <TabsContent value="details" className="p-6 border rounded-b-lg mt-2">
                     <div className="space-y-4">
-                        <h3 className="font-medium">Features</h3>
-                        <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
-                            <li>High-quality material for durability and comfort</li>
-                            <li>Carefully crafted with attention to detail</li>
-                            <li>Versatile design suitable for multiple occasions</li>
-                            <li>Easy care instructions for long-lasting wear</li>
-                        </ul>
+                        {/* show html content */}
+                        {product?.description && (
+                            <div dangerouslySetInnerHTML={{ __html: product.description }} />
+                        )}
 
-                        <h3 className="font-medium mt-6">Materials & Care</h3>
-                        <p className="text-muted-foreground">
-                            100% Premium Cotton. Machine wash cold with similar colors. Tumble dry low. Do not bleach.
-                        </p>
+                        {renderFeatures()}
                     </div>
-                </TabsContent>
-                <TabsContent value="shipping" className="p-6 border rounded-b-lg mt-2">
-                    <div className="space-y-4">
-                        <div>
-                            <h3 className="font-medium">Shipping</h3>
-                            <p className="text-muted-foreground mt-2">
-                                We offer free standard shipping on all orders over $100. For orders under $100, standard shipping is $5.99.
-                                Expedited shipping options are available at checkout.
-                            </p>
-                            <ul className="list-disc pl-5 space-y-1 text-muted-foreground mt-2">
-                                <li>Standard Shipping: 3-5 business days</li>
-                                <li>Express Shipping: 2-3 business days</li>
-                                <li>Overnight Shipping: Next business day</li>
-                            </ul>
-                        </div>
 
-                        <div className="mt-6">
-                            <h3 className="font-medium">Returns</h3>
-                            <p className="text-muted-foreground mt-2">
-                                We want you to be completely satisfied with your purchase. If for any reason you are not happy,
-                                you can return your order within 30 days of delivery for a full refund or exchange.
-                            </p>
-                            <ul className="list-disc pl-5 space-y-1 text-muted-foreground mt-2">
-                                <li>Items must be unworn, unwashed, and unaltered</li>
-                                <li>Original tags must be attached</li>
-                                <li>Include the original packaging if possible</li>
-                            </ul>
-                        </div>
-                    </div>
                 </TabsContent>
                 <TabsContent value="reviews" className="p-6 border rounded-b-lg mt-2">
                     <div className="space-y-6">

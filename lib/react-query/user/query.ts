@@ -1,55 +1,21 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
-  getUserEnquiries,
+  addAddress,
+  deleteAddress,
+  getAddresses,
+  getProfile,
   loadUser,
   postReview,
-  sendProductEnquiry,
+  syncCart,
+  updateAddress,
   updateProfile,
-  updateUserDetails,
 } from "./api";
 import { toast } from "sonner";
-import { getUserToken, handleError } from "../util";
 
-export const useSendProductEnquiry = () => {
-  const addProductMutation = useMutation({
-    mutationKey: ["sendProductEnquiry"],
-    mutationFn: sendProductEnquiry,
-
-    onSuccess: (data) => {
-      toast.success("Product enquiry has been sent successfully");
-      return data;
-    },
-
-    onError: (error) => {
-      toast.error(error?.message);
-    },
-  });
-
-  return addProductMutation;
-};
-
-export const useUpdateUserDetails = () => {
+export const useSyncCart = () => {
   return useMutation({
-    mutationKey: ["updateUserDetails"],
-    mutationFn: updateUserDetails,
-
-    onSuccess: (data) => {
-      toast.success("User details has been updated successfully");
-      return data;
-    },
-
-    onError: (error) => {
-      toast.error(error?.message);
-    },
-  });
-};
-
-export const useGetUserEnquiries = () => {
-  return useQuery({
-    queryKey: ["getUserEnquiries"],
-    queryFn: () => getUserEnquiries(),
-
-    staleTime: 60 * 1000 * 10,
+    mutationKey: ["syncCart"],
+    mutationFn: syncCart,
   });
 };
 
@@ -62,19 +28,46 @@ export const useLoadUser = () => {
   });
 };
 
+export const useAddAddress = () => {
+  return useMutation({
+    mutationKey: ["addAddress"],
+    mutationFn: addAddress,
+  });
+};
+
+export const useGetAddresses = () => {
+  return useQuery({
+    queryKey: ["getAddresses"],
+    queryFn: () => getAddresses(),
+    staleTime: 60 * 1000 * 10,
+  });
+};
+
+export const useUpdateAddress = () => {
+  return useMutation({
+    mutationKey: ["updateAddress"],
+    mutationFn: updateAddress,
+  });
+};
+
+export const useDeleteAddress = () => {
+  return useMutation({
+    mutationKey: ["deleteAddress"],
+    mutationFn: deleteAddress,
+  });
+};
+
+export const useGetProfile = () => {
+  return useQuery({
+    queryKey: ["getProfile"],
+    queryFn: () => getProfile(),
+  });
+};
+
 export const useUpdateProfile = () => {
   return useMutation({
     mutationKey: ["updateProfile"],
     mutationFn: updateProfile,
-
-    onSuccess: (data) => {
-      toast.success("User details has been updated successfully");
-      return data;
-    },
-
-    onError: (error) => {
-      toast.error(error?.message);
-    },
   });
 };
 

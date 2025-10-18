@@ -1,45 +1,13 @@
 'use client';
 
 import React from 'react';
-import { Editor } from '@tiptap/react';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Toggle } from '@/components/ui/toggle';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-import {
-    Bold,
-    Italic,
-    Underline,
-    Strikethrough,
-    Code,
-    Highlighter,
-    AlignLeft,
-    AlignCenter,
-    AlignRight,
-    List,
-    ListOrdered,
-    Quote,
-    Link,
-    Image,
-    Table,
-    Undo,
-    Redo,
-    ChevronDown,
-    Type,
-    CheckSquare,
-    Minus,
-} from 'lucide-react';
 
 
 const ToolbarButton = ({

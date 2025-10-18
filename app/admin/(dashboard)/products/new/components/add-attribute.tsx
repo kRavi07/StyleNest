@@ -12,7 +12,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAddAttributeType } from "@/lib/react-query/admin/query/attributes"
-import { useSonner, toast } from "sonner"
 
 interface AddAttributeProps {
     name: string;

@@ -1,6 +1,16 @@
 import { Address } from "@/types";
 import mongoose, { Schema, Document } from "mongoose";
 
+export interface IOrderItem {
+  productId: string;
+  name: string;
+  sku: string;
+  price: number;
+  quantity: number;
+  image?: string;
+  variantInfo?: Record<string, string>;
+}
+
 export interface IOrder extends Document {
   orderNumber: string;
   customer: {
@@ -22,17 +32,12 @@ export interface IOrder extends Document {
   tax: number;
   shipping: number;
   discount: number;
-  items: {
-    productId: string;
-    name: string;
-    sku: string;
-    price: number;
-    quantity: number;
-    image?: string;
-    variantInfo?: Record<string, string>;
-  }[];
+  items: IOrderItem[];
   shippingAddress: Address;
   billingAddress: Address;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
+  razorpayOrderId: string;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -40,7 +45,7 @@ export interface IOrder extends Document {
 
 const OrderSchema = new Schema<IOrder>(
   {
-    orderNumber: { type: String, required: true, unique: true },
+    orderNumber: { type: String, required: true, unique: true, index: true },
     customer: {
       id: { type: String, required: true },
       name: { type: String, required: true },
@@ -48,7 +53,6 @@ const OrderSchema = new Schema<IOrder>(
     },
     status: {
       type: String,
-      required: true,
       enum: [
         "pending",
         "processing",
@@ -61,11 +65,13 @@ const OrderSchema = new Schema<IOrder>(
     },
     paymentStatus: {
       type: String,
-      required: true,
       enum: ["paid", "pending", "failed", "refunded"],
       default: "pending",
     },
     paymentMethod: { type: String, required: true },
+    razorpayPaymentId: { type: String },
+    razorpaySignature: { type: String },
+    razorpayOrderId: { type: String },
     total: { type: Number, required: true },
     subtotal: { type: Number, required: true },
     tax: { type: Number, required: true },
@@ -73,7 +79,11 @@ const OrderSchema = new Schema<IOrder>(
     discount: { type: Number, required: true, default: 0 },
     items: [
       {
-        productId: { type: String, required: true },
+        productId: {
+          type: Schema.Types.ObjectId,
+          ref: "Product",
+          required: true,
+        },
         name: { type: String, required: true },
         sku: { type: String, required: true },
         price: { type: Number, required: true },

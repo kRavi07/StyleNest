@@ -1,104 +1,68 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import connectToDatabase from "@/lib/db/mongoose";
 import User from "@/lib/db/models/user";
-import { z } from "zod";
-
-const UserLoginSchema = z.object({
-  email: z.string().email({ message: "Invalid email" }),
-  password: z
-    .string()
-    .min(6, { message: "Password must be at least 8 characters long" }),
-});
+import {
+  signAccessToken,
+  signRefreshToken,
+  persistRefreshToken,
+  setAuthCookies,
+} from "@/lib/auth/auth";
 
 export async function POST(req: Request) {
   try {
-    if (!req) {
-      return NextResponse.json(
-        { success: false, error: "Request is missing" },
-        { status: 400 }
-      );
-    }
-
-    const body = await req.json();
-
-    const parsedBody = UserLoginSchema.safeParse(body);
-    if (!parsedBody.success) {
-      return NextResponse.json(
-        {
-          message: "Validation failed",
-          errors: parsedBody.error.issues.map((issue) => ({
-            message: issue.message,
-          })),
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    const { email, password } = parsedBody.data;
-
+    const { email, password } = await req.json();
     if (!email || !password) {
       return NextResponse.json(
-        { success: false, error: "Email and password are required" },
+        { message: "Email and password required" },
         { status: 400 }
       );
     }
-    await connectToDatabase();
 
-    // Find user
     const user = await User.findOne({ email }).select("+password");
-    if (!user) {
+    if (!user || !(await user.validatePassword(password))) {
       return NextResponse.json(
-        { success: false, error: "Invalid credentials" },
+        { message: "Invalid credentials" },
         { status: 401 }
       );
     }
 
-    // Check password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return NextResponse.json(
-        { success: false, error: "Invalid credentials" },
-        { status: 401 }
-      );
-    }
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || "your-secret-key",
-      { expiresIn: "7d" }
-    );
-
-    const resBody = {
-      success: true,
-      data: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        token,
-      },
+    const payload = {
+      id: String(user._id),
+      email: user.email,
+      role: user.role,
     };
-    const res = NextResponse.json(resBody);
 
-    res.cookies.set("token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-      path: "/",
-      maxAge: 60 * 60 * 24,
+    const [accessToken, refreshToken] = await Promise.all([
+      signAccessToken(payload),
+      signRefreshToken(payload),
+    ]);
+
+    const ua = req.headers.get("user-agent") || undefined;
+    const ip =
+      (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() ||
+      (req as any).ip ||
+      undefined;
+
+    await persistRefreshToken(String(user._id), refreshToken, {
+      userAgent: ua,
+      ip,
     });
 
-    return res;
-  } catch (error) {
-    console.error("Login error:", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 }
+    const res = NextResponse.json(
+      {
+        message: "Logged in",
+        data: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+      },
+      { status: 200 }
     );
+    setAuthCookies(res, accessToken, refreshToken);
+    return res;
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ message: "Server error" }, { status: 500 });
   }
 }

@@ -1,111 +1,164 @@
 "use client"
 
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import { useMemo } from "react"
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+} from "recharts"
 
-const data = [
-  {
-    name: "Jan",
-    total: 12400,
-  },
-  {
-    name: "Feb",
-    total: 18100,
-  },
-  {
-    name: "Mar",
-    total: 16200,
-  },
-  {
-    name: "Apr",
-    total: 23800,
-  },
-  {
-    name: "May",
-    total: 28900,
-  },
-  {
-    name: "Jun",
-    total: 39400,
-  },
-  {
-    name: "Jul",
-    total: 34200,
-  },
-  {
-    name: "Aug",
-    total: 29300,
-  },
-  {
-    name: "Sep",
-    total: 36200,
-  },
-  {
-    name: "Oct",
-    total: 28000,
-  },
-  {
-    name: "Nov",
-    total: 42100,
-  },
-  {
-    name: "Dec",
-    total: 45231,
-  },
-]
+import { useGetSalesAnalyticsReport } from "@/lib/react-query/admin/query/analytics"
+import { Skeleton } from "@/components/ui/skeleton"
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart"
 
-export function Overview() {
+// --- Types ---
+type RawItem = {
+  _id: { year: number; month: number }
+  totalSales: number
+  orderCount: number
+}
+
+type ChartData = {
+  date: string
+  totalSales: number
+  orderCount: number
+}
+
+// --- Transform ---
+export function transformData(rawData: RawItem[]): ChartData[] {
+  if (!rawData || rawData.length === 0) return []
+
+  return rawData.map((item) => {
+    const { year, month } = item._id
+    return {
+      date: `${year}-${String(month).padStart(2, "0")}-01`,
+      totalSales: item.totalSales,
+      orderCount: item.orderCount,
+    }
+  })
+}
+
+// --- Skeleton loader for chart ---
+export const BarChartSkeleton = ({ bars = 6 }: { bars?: number }) => {
   return (
-    <ResponsiveContainer width="100%" height={350}>
-      <BarChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-        <XAxis
-          dataKey="name"
-          className="text-xs fill-muted-foreground"
-          tickLine={false}
-          axisLine={false}
-        />
-        <YAxis 
-          className="text-xs fill-muted-foreground"
-          tickLine={false}
-          axisLine={false}
-          tickFormatter={(value) => `$${value / 1000}k`}
-        />
-        <Tooltip 
-          content={({ active, payload }) => {
-            if (active && payload?.length) {
-              return (
-                <div className="rounded-lg border bg-background p-2 shadow-sm">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="flex flex-col">
-                      <span className="text-[0.70rem] uppercase text-muted-foreground">
-                        Month
-                      </span>
-                      <span className="font-bold text-muted-foreground">
-                        {payload[0].payload.name}
-                      </span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[0.70rem] uppercase text-muted-foreground">
-                        Sales
-                      </span>
-                      <span className="font-bold">
-                        ${payload[0].value.toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )
-            }
-            return null
+    <div className="flex h-48 w-full items-end gap-3">
+      {Array.from({ length: bars }).map((_, i) => (
+        <Skeleton
+          key={i}
+          className="w-6 rounded-md shimmer"
+          style={{
+            height: `${Math.floor(Math.random() * 80) + 20}%`,
           }}
         />
-        <Bar
-          dataKey="total"
-          fill="hsl(var(--chart-1))"
-          radius={[4, 4, 0, 0]}
-          className="cursor-pointer hover:fill-primary/80"
-        />
-      </BarChart>
-    </ResponsiveContainer>
+      ))}
+    </div>
+  )
+}
+
+// --- Main Component ---
+export function SaleGraphOverview({
+  startDate,
+  endDate,
+}: {
+  startDate: string
+  endDate: string
+}) {
+  const { isLoading, data } = useGetSalesAnalyticsReport(
+    startDate,
+    endDate,
+    "sales-by-month"
+  )
+
+  const chartData = useMemo(() => {
+    if (!data || data.data.length === 0) return []
+    return transformData(data.data)
+  }, [data])
+
+  // --- Skeleton on loading ---
+  if (isLoading) return <BarChartSkeleton />
+
+  const chartConfig = {
+    totalSales: {
+      label: "Total Sales",
+      color: "var(--chart-2)",
+    },
+    orderCount: {
+      label: "Orders",
+      color: "var(--chart-1)",
+    },
+  } satisfies ChartConfig
+
+  // --- Empty data ---
+  if (chartData.length === 0) {
+    return (
+      <ChartContainer
+        config={chartConfig}
+        className="aspect-auto h-[250px] w-full"
+      >
+        <div className="flex h-full items-center justify-center text-muted-foreground">
+          No data available
+        </div>
+      </ChartContainer>
+    )
+  }
+
+  // --- Chart ---
+  return (
+    <ChartContainer config={chartConfig} className="h-[500px] w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={chartData}
+          barCategoryGap="20%"
+          barGap={2}
+        >
+          <CartesianGrid vertical={false} strokeDasharray="3 3" />
+          <XAxis
+            dataKey="date"
+            tickMargin={8}
+            minTickGap={32}
+            tickFormatter={(value) => {
+              const date = new Date(value)
+              return date.toLocaleDateString("en-US", {
+                month: "short",
+                year: "2-digit",
+              })
+            }}
+          />
+
+          <YAxis />
+
+          <ChartTooltip
+            content={
+              <ChartTooltipContent
+                className="w-[150px]"
+                nameKey="date"
+                labelFormatter={(value) =>
+                  new Date(value).toLocaleDateString("en-US", {
+                    month: "short",
+                    year: "numeric",
+                  })
+                }
+              />
+            }
+          />
+
+          <Bar
+            dataKey="totalSales"
+            name={chartConfig.totalSales.label}
+            fill={chartConfig.totalSales.color}
+            barSize={20}
+            radius={[4, 4, 0, 0]}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    </ChartContainer>
   )
 }

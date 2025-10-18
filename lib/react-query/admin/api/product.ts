@@ -1,6 +1,5 @@
 import { getAdminToken, handleError } from "../../util";
 import axiosInstance, { setAuthToken } from "../axiosInstance";
-import { ProductResponse } from "../query/product";
 
 export const fetchAllProducts = async ({
   page,
@@ -19,7 +18,7 @@ export const fetchAllProducts = async ({
     const res = await axiosInstance.get("/admin/products", {
       params: {
         page,
-        limit: 20,
+        limit,
         search,
         status,
         category,
@@ -46,36 +45,45 @@ export const getAllProducts = async () => {
   }
 };
 
-export const rejectProduct = async ({
+export const getProdcutById = async (id: string) => {
+  try {
+    const res = await axiosInstance.get(`/admin/products/${id}`);
+    return res.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+
+export const uploadProductImages = async (files: File[]) => {
+  try {
+    const formData = new FormData();
+    if (files && files.length > 0) {
+      files.forEach((file) => {
+        formData.append("images", file);
+      });
+    }
+    const res = await axiosInstance.post(
+      `/admin/products/upload-images`,
+      formData
+    );
+    return res.data;
+  } catch (error) {
+    throw new Error(handleError(error));
+  }
+};
+
+export const updateProduct = async ({
   id,
-  rejection_note,
+  data,
 }: {
   id: string;
-  rejection_note: string;
+  data: any;
 }) => {
   try {
-    const token = getAdminToken();
-    setAuthToken(token);
-
-    const formData = new FormData();
-
-    formData.append("rejection_note", rejection_note);
-
-    const config = {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    };
-
-    const res = await axiosInstance.put(
-      `/admin/reject-product/${id}`,
-      formData,
-      config
-    );
-
-    return res;
+    const res = await axiosInstance.patch(`/admin/products/${id}`, data);
+    return res.data;
   } catch (error) {
-    handleError(error);
+    throw new Error(handleError(error));
   }
 };
 

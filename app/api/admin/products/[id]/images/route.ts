@@ -2,18 +2,15 @@
 
 import Product from "@/lib/db/models/product";
 import connectToDatabase from "@/lib/db/mongoose";
-import {
-  isFileExist,
-  processFileUpload,
-  uploadFileAndSaveMetadata,
-} from "@/lib/services/file-services";
-import { hashFile } from "@/lib/utils";
+import { processFileUpload } from "@/lib/services/file-services";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+type Params = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+export async function POST(req: NextRequest, { params }: Params) {
   await connectToDatabase();
   const formData = await req.formData();
   const file = formData.get("image");
@@ -25,14 +22,12 @@ export async function POST(
     );
   }
 
-  const hash = await hashFile(file);
-  const existingFile = await isFileExist(hash);
-  let s3Key: string;
+  const { id } = await params;
 
-  s3Key = await processFileUpload(file, "products");
+  const s3Key = await processFileUpload(file, "products");
 
   const updated = await Product.findByIdAndUpdate(
-    params.id,
+    id,
     { $addToSet: { images: s3Key } },
     { new: true }
   );
@@ -42,19 +37,18 @@ export async function POST(
 
 // /api/products/[id]/images/route.ts
 
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  await connectToDatabase();
+export async function DELETE(req: NextRequest, { params }: Params) {
   const { key } = await req.json();
 
   if (!key) {
     return NextResponse.json({ error: "Missing image key" }, { status: 400 });
   }
 
+  const { id } = await params;
+  await connectToDatabase();
+
   const updated = await Product.findByIdAndUpdate(
-    params.id,
+    id,
     { $pull: { images: key } },
     { new: true }
   );

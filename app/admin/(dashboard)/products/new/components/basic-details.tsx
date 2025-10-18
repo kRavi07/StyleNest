@@ -10,19 +10,15 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 
-import React, { useEffect } from "react";
+import React from "react";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { productDescription } from "./description-data";
-import dynamic from "next/dynamic";
-import DocumentEditor from "@/components/text-editor/text-editor";
 import { useEditor } from "@tiptap/react";
 import { extensions } from "@/components/text-editor/text-editor-extension";
 import { Controller } from "react-hook-form";
 import { RichTextEditorField } from "@/components/common/tiptap-editor";
 import { useGetAllCatgeories, useGetSubCategories } from "@/lib/react-query/admin/query/category";
 import { CategoryProps } from "@/lib/react-query/query.type";
-import { CategoryFormData } from "@/lib/validation/category";
 
 
 
@@ -38,11 +34,6 @@ const BasicDetails = ({ form }: {
 
     });
 
-    const {
-        register,
-        formState: { errors },
-        setValue,
-    } = form;
 
     const { data: categories } = useGetAllCatgeories();
     const { data: subcategories, isFetched } = useGetSubCategories(form.watch("category"));

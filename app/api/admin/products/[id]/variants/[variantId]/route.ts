@@ -5,12 +5,15 @@ import Product from "@/lib/db/models/product";
 import connectToDatabase from "@/lib/db/mongoose";
 import { UpdateVariantSchema } from "@/lib/validation/product"; // Your Zod schema
 
-type Params = Promise<{
-  params: { id: string; variantId: string };
-}>;
+type Params = {
+  params: Promise<{
+    id: string;
+    variantId: string;
+  }>;
+};
 
-export async function PATCH(req: NextRequest, params: Params) {
-  const param = (await params).params;
+export async function PATCH(req: NextRequest, { params }: Params) {
+  const param = await params;
   if (!param || !param.id || !param.variantId) {
     return NextResponse.json(
       { error: "Product ID and variant ID are required" },
@@ -45,7 +48,9 @@ export async function PATCH(req: NextRequest, params: Params) {
     return NextResponse.json({ error: "Product not found" }, { status: 404 });
   }
 
-  const variant = product.variants.id(variantId);
+  const variant = product.variants.find(
+    (variant: any) => variant._id.toString() === variantId
+  );
 
   if (!variant) {
     return NextResponse.json({ error: "Variant not found" }, { status: 404 });

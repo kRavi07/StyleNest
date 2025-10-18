@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,11 +17,12 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox"; import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-
+import { useRegister } from "@/lib/react-query/auth/queries";
+import CaptchaWidget from "@/components/common/captcha/captcha-verification";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 const registerSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -31,6 +31,7 @@ const registerSchema = z.object({
   termsAccepted: z.boolean().refine(val => val === true, {
     message: "You must accept the terms and conditions to continue",
   }),
+  mobileno: z.string().min(10, { message: "Please enter a valid mobile number" }),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -39,10 +40,11 @@ const registerSchema = z.object({
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
-  const { register } = useAuth();
-  const router = useRouter();
-  const { toast } = useToast();
+  const { mutateAsync: register } = useRegister();
   const [isLoading, setIsLoading] = useState(false);
+  const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
+  const router = useRouter();
+
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -51,6 +53,7 @@ export default function RegisterPage() {
       email: "",
       password: "",
       confirmPassword: "",
+      mobileno: "",
       termsAccepted: false,
     },
   });
@@ -58,14 +61,22 @@ export default function RegisterPage() {
   async function onSubmit(data: RegisterFormValues) {
     try {
       setIsLoading(true);
-      await register(data.name, data.email, data.password);
+      toast.promise(
+        await register({ name: data.name, email: data.email, password: data.password, mobileno: data.mobileno }), {
+        loading: 'Registering user...',
+        success: () => {
+
+          router.push("/")
+          return 'User registered successfully!'
+        },
+        error: (err) => {
+          const msg = err instanceof Error ? err.message : 'Failed to register user. Please try again.';
+          return msg;
+        },
+      })
     } catch (error) {
       console.error("Registration error:", error);
-      toast({
-        title: "Error",
-        description: "An error occurred during registration. Please try again.",
-        variant: "destructive",
-      });
+
     } finally {
       setIsLoading(false);
     }
@@ -104,6 +115,20 @@ export default function RegisterPage() {
                   <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input placeholder="your.email@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="mobileno"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Mobile Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="+91 0000000000" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -150,14 +175,14 @@ export default function RegisterPage() {
                     <FormLabel className="text-sm font-normal">
                       I agree to the{" "}
                       <Link
-                        href="/terms"
+                        href="/"
                         className="text-primary hover:underline"
                       >
                         terms of service
                       </Link>{" "}
                       and{" "}
                       <Link
-                        href="/privacy"
+                        href="/"
                         className="text-primary hover:underline"
                       >
                         privacy policy
@@ -168,7 +193,9 @@ export default function RegisterPage() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading}>
+
+            <CaptchaWidget onVerifiedChange={setIsCaptchaVerified} />
+            <Button type="submit" className="w-full" disabled={!isCaptchaVerified || isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

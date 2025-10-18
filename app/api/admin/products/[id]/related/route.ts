@@ -2,19 +2,20 @@
 import Product from "@/lib/db/models/product";
 import connectToDatabase from "@/lib/db/mongoose";
 import { NextRequest, NextResponse } from "next/server";
-
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+type Params = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+export async function GET(req: NextRequest, { params }: Params) {
   await connectToDatabase();
-
-  const product = await Product.findById(params.id);
+  const { id } = await params;
+  const product = await Product.findById(id);
   if (!product)
     return NextResponse.json({ error: "Product not found" }, { status: 404 });
 
   const related = await Product.find({
-    _id: { $ne: params.id },
+    _id: { $ne: id },
     category: product.category,
   })
     .limit(6)
